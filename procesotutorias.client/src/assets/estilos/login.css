@@ -1,0 +1,104 @@
+:root {
+            --principal: #121927; 
+            --blanco: #FFFFFF; 
+        }
+.inicioDeSesion {
+    display: flex;
+    height: 90vh;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: var(--blanco);
+    color: var(--principal);
+    padding: 20px;
+}
+
+.inicioDeSesion .imgI {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-image: url('../imagenes/bg1.png'); 
+    background-size: 75%; 
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.inicioDeSesion .derCont {
+    flex: 1;
+    display: flex;
+    flex-direction: column; 
+    justify-content: flex-start; 
+    align-items: center; 
+    padding-right: 20px;
+    padding-top: 20px; 
+}
+
+.inicioDeSesion .derCont h1 {
+    margin-bottom: 20px;
+    text-align: center; 
+}
+
+.inicioDeSesion .formulario {
+    background: var(--blanco);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 300px;
+}
+
+.inicioDeSesion .formulario label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.inicioDeSesion .formulario input {
+    width: 90%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid var(--principal);
+    border-radius: 5px;
+}
+
+.inicioDeSesion .formulario input:hover{
+    border-color: #22d47b;
+}
+.inicioDeSesion .formulario input:focus{
+    border-color: #22d47b;
+    outline: none;
+}
+
+.inicioDeSesion .formulario button {
+    background: var(--principal);
+    color: var(--blanco);
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.inicioDeSesion .formulario button:hover {
+    background: #22d47b; 
+}
+
+.inicioDeSesion .formulario a {
+    color: var(--principal);
+    text-decoration: none;
+    display: block;
+    margin-top: 10px;
+}
+
+.inicioDeSesion .formulario a:hover {
+    text-decoration: underline;
+    color: #22d47b;
+}
+.menu ul{
+        display: flex;
+        list-style: none;
+}
+.menu a {
+    display: block;
+    text-decoration: none; 
+}

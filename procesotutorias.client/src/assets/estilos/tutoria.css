@@ -1,0 +1,129 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #ffffff;
+    color: #121927;
+}
+
+header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background: #121927;
+    color: #ffffff;
+}
+
+header img {
+    max-width: 80px;
+}
+
+header h1 {
+    padding-left: 10px;
+    text-align: left;
+    flex: 1;
+}
+nav {
+    background: #121927;
+    padding: 10px;
+    text-align: center;
+}
+nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+}
+
+nav ul li a {
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: background 0.3s ease;
+}
+    nav ul li a:hover {
+        color: #22d47b;
+    }
+.contenido {
+    padding: 20px;
+}
+
+.contenido {
+    font-family: Arial, sans-serif;
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 15px;
+}
+
+h1 {
+    text-align: center;
+    font-size: 18px;
+    margin-bottom: 25px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+th, td {
+    border: 1px solid #000;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #f0f0f0;
+    font-weight: bold;
+}
+
+.motivo td {
+    vertical-align: top;
+    padding: 10px 5px;
+}
+
+.input-text {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #666;
+    border-radius: 3px;
+    font-size: 14px;
+    box-sizing: border-box; 
+}
+
+.select-alumno {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #666;
+    border-radius: 3px;
+    background-color: white;
+    font-size: 14px;
+    margin: 5px 0;
+    box-sizing: border-box;
+}
+
+.seccion textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 8px;
+    border: 1px dashed #666;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.firmas {
+    margin-top: 30px;
+}
+
+.firma {
+    border-top: 1px solid #000;
+    text-align: center;
+    padding-top: 40px;
+    margin: 0 10px;
+}

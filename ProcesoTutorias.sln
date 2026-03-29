@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36221.1 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "procesotutorias.client", "procesotutorias.client\procesotutorias.client.esproj", "{EF4AD5C6-E76F-F82B-7DDE-8F8B2DA08757}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcesoTutorias.Server", "ProcesoTutorias.Server\ProcesoTutorias.Server.csproj", "{53ADBA2D-9B4A-4684-951B-7B619AC72926}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EF4AD5C6-E76F-F82B-7DDE-8F8B2DA08757}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF4AD5C6-E76F-F82B-7DDE-8F8B2DA08757}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF4AD5C6-E76F-F82B-7DDE-8F8B2DA08757}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{EF4AD5C6-E76F-F82B-7DDE-8F8B2DA08757}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF4AD5C6-E76F-F82B-7DDE-8F8B2DA08757}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF4AD5C6-E76F-F82B-7DDE-8F8B2DA08757}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{53ADBA2D-9B4A-4684-951B-7B619AC72926}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{53ADBA2D-9B4A-4684-951B-7B619AC72926}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{53ADBA2D-9B4A-4684-951B-7B619AC72926}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{53ADBA2D-9B4A-4684-951B-7B619AC72926}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7CFBEB09-96CA-4F66-BBB4-6D9659D7F52C}
+	EndGlobalSection
+EndGlobal

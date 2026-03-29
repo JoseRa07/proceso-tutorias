@@ -1,0 +1,71 @@
+.inicio-cont {
+    background-image: url('../imagenes/utBG.jpg'); 
+    background-size: cover; 
+    background-position: center; 
+    background-repeat: no-repeat;
+    height: 80vh; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: #FFFFFF; 
+    position: relative;
+}
+
+.inicio-cont::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); 
+    z-index: 1; 
+}
+
+.inicio-cont .cont {
+    position: relative; 
+    z-index: 2;
+}
+
+.inicio-cont h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+}
+
+.inicio-cont h3 {
+    font-size: 1.5rem;
+    margin-bottom: 30px;
+}
+
+.inicio-cont p {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+}
+
+.inicio-cont .btn {
+    background: #22d47b;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 1rem;
+}
+.btn{
+    padding: 10px 20px;
+    margin: 10px;
+}
+
+.inicio-cont .btn:hover {
+    background: #1B5E20;
+}
+
+.menu ul{
+        display: flex;
+        list-style: none;
+}
+.menu a {
+    display: block;
+    text-decoration: none;
+}

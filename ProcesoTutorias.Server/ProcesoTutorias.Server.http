@@ -1,0 +1,6 @@
+@ProcesoTutorias.Server_HostAddress = http://localhost:5016
+
+GET {{ProcesoTutorias.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
