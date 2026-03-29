@@ -1,7 +1,10 @@
 :root {
-            --principal: #121927; 
-            --blanco: #FFFFFF; 
-        }
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    --principal: #121927;
+    --blanco: #FFFFFF;
+}
 .inicioDeSesion {
     display: flex;
     height: 90vh;

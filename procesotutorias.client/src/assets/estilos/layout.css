@@ -1,7 +1,10 @@
-        :root {
-            --color-primary: #121927; 
-            --color-secondary: #FFFFFF; 
-        }
+:root {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    --color-primary: #121927;
+    --color-secondary: #FFFFFF;
+}
         body {
             margin: 0;
             font-family: Arial, sans-serif;
