@@ -5,6 +5,10 @@ body {
     color: #121927;
 }
 
+.containerP {
+    margin-top: 80px;
+}
+
 header {
     display: flex;
     align-items: center;
