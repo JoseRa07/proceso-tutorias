@@ -1,28 +1,11 @@
-import "../../assets/estilos/layout.css";
 import "../../assets/estilos/tutoria.css";
-
-import utnLogo from "../../assets/imagenes/UTN.png";
+import Layout from "../../componentes/Layout";
 
 function Tutoria() {
     return (
-        <>
-            <header>
-                <img src={utnLogo} alt="UTN" />
-                <h1>Universidad Tecnológica de Nayarit</h1>
+        <Layout>
 
-                <nav className="menu">
-                    <ul>
-                        <li>
-                            <a href="/">Inicio</a>
-                        </li>
-                        <li>
-                            <a href="/tutoria">Tutoría</a>
-                        </li>
-                    </ul>
-                </nav>
-            </header>
-
-            <div className="container">
+            <div className="containerP">
                 <div className="contenido">
                     <form>
                         <table>
@@ -160,31 +143,7 @@ function Tutoria() {
                 </div>
             </div>
 
-            <footer>
-                <div className="footer-cont">
-                    <div className="footerC">
-                        <h3>Contacto</h3>
-                        <p>
-                            Dirección: Carretera Tepic-Compostela Km 9, C.P. 63173, Nayarit,
-                            México.
-                        </p>
-                        <p>Teléfono: (311) 211 9400</p>
-                        <p>Email: contacto@utnay.edu.mx</p>
-                    </div>
-
-                    <div className="footerC">
-                        <h3>Redes Sociales</h3>
-                        <a href="#">Facebook</a>
-                        <a href="#">Twitter</a>
-                        <a href="#">Instagram</a>
-                    </div>
-                </div>
-
-                <div className="footerF">
-                    <p>© 2023 Universidad Tecnológica de Nayarit</p>
-                </div>
-            </footer>
-        </>
+        </Layout>
     );
 }
 

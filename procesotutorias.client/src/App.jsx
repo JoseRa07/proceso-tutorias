@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Index from "./pages/Index";
-import Login from "./pages/Auth/Login";
+import Login from "./componentes/Auth/Login";
 import Tutoria from "./pages/Tutoria/Tutoria";
 
 function App() {
