@@ -12,6 +12,7 @@
     gap: 10px;
 }
 
+
 header #UTlabel {
     font-weight: bold;
     color: white !important;
@@ -211,12 +212,24 @@ footer {
         display: block;
     }
 
+    .header-home .menu {
+        background: rgba(18, 25, 39, 0.05) !important;
+        backdrop-filter: blur(1.5px);
+        -webkit-backdrop-filter: blur(1.5px);
+    }
+
+    .header-default .menu {
+        background: rgba(18, 25, 39, 0.92) !important;
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
+    }
+
     .menu {
         position: absolute;
-        top: 60px;
+        top: 70px;
         right: 0;
         width: 100%;
-        background: var(--color-primary);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         display: none;
         flex-direction: column;
     }
@@ -235,7 +248,7 @@ footer {
 
         .menu a {
             padding: 15px;
-            border-top: 1px solid rgba(255,255,255,0.1);
+            border-top: 0.5px solid rgba(255,255,255,0.1);
         }
 
     .footerC:first-child {

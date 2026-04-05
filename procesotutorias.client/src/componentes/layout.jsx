@@ -6,6 +6,9 @@ import utlogo_deg from "../assets/imagenes/utlogo_degradado.png";
 
 function Layout({ children, variant = "default" }) {
     const [menuOpen, setMenuOpen] = useState(false);
+    const usuario = JSON.parse(localStorage.getItem("usuario"));
+    const isAuthenticated = !!usuario;
+
     return (
         <>
             <header className={variant === "home" ? "header-home" : "header-default"}>
@@ -23,8 +26,34 @@ function Layout({ children, variant = "default" }) {
 
                 <nav className={`menu ${menuOpen ? "open" : ""}`}>
                     <ul>
-                        <li><a href="/">Inicio</a></li>
-                        <li><a href="/tutoria">Tutoría</a></li>
+
+                        {isAuthenticated && (
+                            <>
+                                <li><a href="/Panel">Inicio</a></li>
+                                <li><a href="/tutoria">Tutoría</a></li>
+                            </>
+                        )}
+
+                        {!isAuthenticated && (
+                            <>
+                                <li><a href="/">Inicio</a></li>
+                            </>
+                        )}
+
+                        <li><a href="/Acerca-de">Acerca de</a></li>
+
+                        {isAuthenticated && (
+                            <li>
+                                <button
+                                    onClick={() => {
+                                        localStorage.removeItem("usuario");
+                                        window.location.href = "/";
+                                    }}
+                                >
+                                    Cerrar sesión
+                                </button>
+                            </li>
+                        )}
                     </ul>
                 </nav>
             </header>
@@ -43,25 +72,18 @@ function Layout({ children, variant = "default" }) {
                             Dirección: Carretera Tepic-Compostela Km 9, C.P. 63173, Nayarit,
                             México.
                         </p>
-                        <p>Teléfono: (311) 211 9400</p>
+                        <p>Teléfono: (311) 211 9800</p>
                         <p>Email: contacto@utnay.edu.mx</p>
                     </div>
 
                     <div className="footerC">
-                        <h3>Redes Sociales</h3>
-                        <a href="#" target="_blank" rel="noreferrer">
+                        <h3>Enlaces</h3>
+                        <a href="https://www.facebook.com/UTNAY/" target="_blank" rel="noreferrer">
                             Facebook
                         </a>
-                        <a href="#" target="_blank" rel="noreferrer">
-                            Twitter
+                        <a href="https://utnay.edu.mx/" target="_blank" rel="noreferrer">
+                            Sitio oficial
                         </a>
-                        <a href="#" target="_blank" rel="noreferrer">
-                            Instagram
-                        </a>
-                    </div>
-
-                    <div className="footerC">
-                        <h3>Enlaces Rápidos</h3>
                     </div>
                 </div>
 
