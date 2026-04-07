@@ -109,6 +109,19 @@ nav li a:hover{
 .btn:hover {
 }
 
+.CerrarSesion-btn {
+    background-color: transparent;
+    border: none;
+    color: var(--color-secondary);
+    font-size: 16px;
+    font-weight: bold;
+    display: block;
+    padding: 15px 0px;
+}
+    .CerrarSesion-btn:hover {
+        color: #22d47b;
+    }
+
 footer {
     background: var(--color-primary);
     color: var(--color-secondary);
@@ -207,6 +220,28 @@ footer {
 }
 
 @media (max-width: 768px) {
+    .logo-cont {
+        padding-top:10px;
+        padding-bottom: 10px;
+    }
+    
+    .logo-cont img {
+        max-width: 60px;
+        margin-right: 10px;
+    }
+
+    #UTlabel {
+        font-size: 15px;
+    }
+
+    .logo-cont {
+        gap: 6px;
+    }
+
+    .CerrarSesion-btn {
+        margin-top: 8px;
+        display: unset;
+    }
 
     .menu-toggle {
         display: block;

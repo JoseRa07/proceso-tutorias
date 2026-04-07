@@ -14,8 +14,9 @@
     margin-top: 80px;
     margin-bottom: 20px;
     padding: 0 15px;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    min-height: 80vh;
+    max-height: 100vh;
     box-sizing: border-box;
 }
 
@@ -34,6 +35,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.panel-header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .calendar-btn {
@@ -80,14 +87,54 @@
 }
 
 .tutoria-item {
-    border: 1px solid #ccc;
-    padding: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    padding: 10px;
     margin-bottom: 8px;
-    border-radius: 5px;
+    border-radius: 6px;
+    background-color: #fff;
+}
+
+.tutoria-iz {
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.tutoria-der {
+    width: 120px;
+    text-align: right;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    word-wrap: break-word;
+}
+
+.tutoria-der-col {
+    width: 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-end;
+
+    text-align: right;
+    gap: 2px;
+}
+
+.TutoriasAsig .tutoria-item {
+    border-left: 15px solid #ff6a00;
+}
+
+.tutorias-recientes-list .tutoria-item {
+    border-left: 15px solid #22d47b;
 }
 
 /* movil */
 @media (max-width: 768px) {
+
     .panel-container {
         padding: 0 20px;
     }

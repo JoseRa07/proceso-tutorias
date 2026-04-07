@@ -44,7 +44,7 @@ function Layout({ children, variant = "default" }) {
 
                         {isAuthenticated && (
                             <li>
-                                <button
+                                <button className="CerrarSesion-btn"
                                     onClick={() => {
                                         localStorage.removeItem("usuario");
                                         window.location.href = "/";

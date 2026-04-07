@@ -1,3 +1,4 @@
+import React from "react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -16,7 +17,17 @@ import {
 
 import CloseIcon from "@mui/icons-material/Close";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import SchoolIcon from '@mui/icons-material/School';
+import SettingsIcon from '@mui/icons-material/Settings';
+import TimelineIcon from '@mui/icons-material/Timeline';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import FilePresentIcon from '@mui/icons-material/FilePresent';
+
 import CambiarContra from "../componentes/Auth/CambiarContra";
+
+// nuevos imports
+import { usePanelInfo } from "../hooks/usePanelInfo";
+import { saludo } from "../utils/PanelUtils";
 
 function Panel() {
 
@@ -30,40 +41,33 @@ function Panel() {
 
     const [showCambiarPass, setShowCambiarPass] = useState(false);
     const [openCalendar, setOpenCalendar] = useState(false);
-    //proteccion de ruta con bandera almacenada de momento (probablemente sea con JWT nose como lo vaya a implementar el que le toque seguridad)
+
     const navigate = useNavigate();
-
-    const Saludo = () => {
-        const hora = new Date().getHours();
-
-        if (hora >= 6 && hora < 12) return "Buenos días";
-        if (hora >= 12 && hora < 19) return "Buenas tardes";
-        return "Buenas noches";
-    };
 
     const [usuario] = useState(() => {
         const usuarioStorage = localStorage.getItem("usuario");
         return usuarioStorage ? JSON.parse(usuarioStorage) : null;
     });
 
+    // hook con datos
+    const { grupo, tutorias, tutoriasAsignadas } = usePanelInfo(usuario);
+
     const rutasRol = {
-        //NOTA SI ALGUIEN MODIFICA ESTO SOLO PONGA 3 maximo
-        1: [ // admini
-            { nombre: "Gestión de tutores", ruta: "/Gestion-de-tutores" },
-            { nombre: "Configuración", ruta: "/#" }
+        1: [
+            { nombre: "Gestión de tutores", ruta: "/Gestion-de-tutores", icon: ManageAccountsIcon },
+            { nombre: "Configuración", ruta: "/#", icon: SettingsIcon }
         ],
-        2: [ // alumno
-            { nombre: "Ver tutorías", ruta: "/tutorias" },
-            { nombre: "Justificantes", ruta: "/#" },
-            { nombre: "Configuración", ruta: "/#" }
+        2: [
+            { nombre: "Ver tutorías", ruta: "/tutorias", icon: SchoolIcon },
+            { nombre: "Justificantes", ruta: "/#", icon: FilePresentIcon },
+            { nombre: "Configuración", ruta: "/#", icon: SettingsIcon }
         ],
-        3: [ // tutor
-            { nombre: "Seguimiento", ruta: "/#" },
-            { nombre: "Justificantes", ruta: "/#" },
-            { nombre: "Configuración", ruta: "/#" }
+        3: [
+            { nombre: "Seguimiento", ruta: "/#", icon: TimelineIcon },
+            { nombre: "Justificantes", ruta: "/#", icon: FilePresentIcon },
+            { nombre: "Configuración", ruta: "/#", icon: SettingsIcon }
         ],
-        4: [ // no tutor
-        ]
+        4: []
     };
 
     useEffect(() => {
@@ -106,11 +110,26 @@ function Panel() {
                     <div className="panel-main">
 
                         <Box className="panel-header">
-                            <Typography variant="h6" className="TextoN" fontWeight="bold">
-                                {Saludo() + ", " + usuario.nombre}
+                            <Typography variant="h6" className="TextoN" fontWeight="bold"
+                            sx={{
+                                fontSize: { xs: "18px", md: "1.25rem" }
+                            }}>
+                                {saludo() + ", " + usuario.nombre}
                             </Typography>
 
-                            {usuario.id_rol !== 1 && ( // admin o no tutor
+                            <Box className="panel-header-right">
+                                {usuario.id_rol !== 1 && usuario.id_rol !== 4 && ( // grupo del tutor/alumno
+                                    <>
+                                        <Typography variant="h6" alignItems="End" className="TextoN" fontWeight="bold"
+                                        sx={{
+                                            fontSize: { xs: "18px", md: "1.25rem" }
+                                        }}>
+                                            {"Grupo: " + (grupo ? `${grupo.carrera}-${grupo.nombre}` : "Sin grupo")}
+                                        </Typography>
+                                    </>
+                                )}
+
+                                {usuario.id_rol !== 1 && usuario.id_rol !== 4 && ( // admin o no tutor
                                 <>
                                     <IconButton
                                         className="calendar-btn"
@@ -119,8 +138,17 @@ function Panel() {
                                         <CalendarMonthIcon />
                                     </IconButton>
                                 </>
-                            )}
+                                )}
+                            </Box>
                         </Box>
+
+                        {usuario.id_rol == 4 && ( // si es maestro
+                            <>
+                                <Box sx={{ border: "1px solid #ccc", mt: 1, minHeight: "20vh", maxWidth:"90vw",display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", p: 2}}>
+                                    Te encuentras en espera de ser asignado como tutor...
+                                </Box>
+                            </>
+                        )}
 
                         <div className="quick-actions">
                             {(rutasRol[usuario.id_rol] || []).map((item, index) => (
@@ -130,12 +158,30 @@ function Panel() {
                                     sx={{
                                         backgroundColor: "#FFFFFF",
                                         cursor: "pointer", 
-                                        "&:hover": { backgroundColor: "#20bf6b" }
+                                        "&:hover": { backgroundColor: "#20bf6b" },
+                                        "&:hover .quick-text": {
+                                            color: "#fff"
+                                        },
+                                        "&:hover .quick-icon": {
+                                            color: "#fff"
+                                        }
                                     }}
                                     onClick={() => navigate(item.ruta)}
                                 >
-                                    <CardContent sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                        <Typography className="TextoN" fontWeight="medium" variant="body2">
+                                    <CardContent sx={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        gap: 1
+                                    }}
+                                    >
+                                        {React.cloneElement(item.icon, {
+                                            className: "quick-icon",
+                                            sx: { fontSize: 40, color: "#20A85E", transition: "0.2s" }
+                                        })}
+
+                                        <Typography className="TextoN quick-text" fontWeight="Bold" variant="body2">
                                             {item.nombre}
                                         </Typography>
                                     </CardContent>
@@ -143,51 +189,76 @@ function Panel() {
                             ))}
                         </div>
 
-                        {usuario.id_rol !== 1 && ( // admin o no tutor
-                            <>
-                        <Card sx={{ mb: 2 }}>
-                            <CardContent>
-                                <Typography className="subtitulo" fontWeight="bold" variant="subtitle1" textAlign="left">
-                                    Tutorías asignadas
-                                </Typography>
-
-                                <Box sx={{ border: "1px solid #ccc", p: 1, mt: 1 }}>
-                                    Aún no tienes tutorías asignadas...
-                                </Box>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardContent>
-                                <Box display="flex" justifyContent="space-between">
-                                    <Typography className="subtitulo" fontWeight="bold" variant="subtitle1">
-                                        Tutorías recientes
+                        {usuario.id_rol !== 1 && usuario.id_rol !== 4 && ( // admin o no tutor
+                        <>
+                            <Card sx={{ mb: 2 }}>
+                                <CardContent className="TutoriasAsig">
+                                    <Typography className="subtitulo" fontWeight="bold" variant="subtitle1" textAlign="left">
+                                        {usuario.id_rol === 2 ? "Tutorías asignadas" : "Tutorías pendientes"}
                                     </Typography>
 
-                                    <Button size="small" variant="contained" sx={{
-                                        backgroundColor: "#20A85E",
-                                        "&:hover": {
-                                            backgroundColor: "#1B5E20"
-                                        }
-                                    }}>
-                                        ver historial
-                                    </Button>
-                                </Box>
+                                    <Box sx={{ p: 1, mt: 1 }}>
+                                        {tutoriasAsignadas.length === 0 ? (
+                                            "No hay tutorías asignadas"
+                                        ) : (
+                                            tutoriasAsignadas.map((t) => (
+                                                <Box key={t.idSesion} className="tutoria-item">
+                                                    <div className="tutoria-iz">
+                                                        <strong>{t.motivo}</strong>
+                                                    </div>
 
-                                <Box className="tutorias-recientes-list">
-                                    {[1, 2, 3, 4, 5].map((item) => (
-                                        <Box key={item} className="tutoria-item">
-                                            tutoría
-                                        </Box>
-                                    ))}
-                                </Box>
-                            </CardContent>
-                        </Card>
-                            </>
+                                                    <div className="tutoria-der">
+                                                        <span>{t.fecha}</span>
+                                                    </div>
+                                                </Box>
+                                            ))
+                                        )}
+                                    </Box>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardContent>
+                                    <Box display="flex" justifyContent="space-between">
+                                        <Typography className="subtitulo" fontWeight="bold" variant="subtitle1">
+                                            Tutorías recientes
+                                        </Typography>
+
+                                        <Button size="small" variant="contained" sx={{
+                                            backgroundColor: "#20A85E",
+                                            "&:hover": {
+                                                backgroundColor: "#1B5E20"
+                                            }
+                                        }}>
+                                            ver historial
+                                        </Button>
+                                    </Box>
+
+                                    <Box className="tutorias-recientes-list">
+                                        {tutorias.length === 0 ? (
+                                            <Box>No hay tutorías registradas</Box>
+                                        ) : (
+                                            tutorias.map((t) => (
+                                                <Box key={t.idSesion} className="tutoria-item">
+                                                    <div className="tutoria-iz">
+                                                        <strong>{t.motivo}</strong>
+                                                    </div>
+
+                                                    <div className="tutoria-der-col">
+                                                        <span>{t.fecha}</span>
+                                                        <span>{t.horaIni} - {t.horaFin}</span>
+                                                    </div>
+                                                </Box>
+                                            ))
+                                        )}
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                        </>
                         )}
                     </div>
 
-                    {usuario.id_rol !== 1 && ( // admin o no tutor
+                    {usuario.id_rol !== 1 && usuario.id_rol !== 4 && ( // admin o no tutor
                         <>
                     {openCalendar && (
                         <div
