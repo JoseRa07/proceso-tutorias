@@ -58,7 +58,7 @@ function Panel() {
             { nombre: "Configuración", ruta: "/#", icon: SettingsIcon }
         ],
         2: [
-            { nombre: "Ver tutorías", ruta: "/tutorias", icon: SchoolIcon },
+            { nombre: "Ver tutorías", ruta: "/Tutorias", icon: SchoolIcon },
             { nombre: "Justificantes", ruta: "/#", icon: FilePresentIcon },
             { nombre: "Configuración", ruta: "/#", icon: SettingsIcon }
         ],
@@ -202,7 +202,16 @@ function Panel() {
                                             "No hay tutorías asignadas"
                                         ) : (
                                             tutoriasAsignadas.map((t) => (
-                                                <Box key={t.idSesion} className="tutoria-item">
+                                                <Box
+                                                    key={t.idSesion}
+                                                    className="tutoria-item"
+                                                    onClick={() => navigate(`/Tutoria/${t.idSesion}`)}
+                                                    sx={{
+                                                        cursor: "pointer",
+                                                        "&:hover": {
+                                                            backgroundColor: "#f5f5f5"
+                                                        }
+                                                    }}>
                                                     <div className="tutoria-iz">
                                                         <strong>{t.motivo}</strong>
                                                     </div>
@@ -221,7 +230,7 @@ function Panel() {
                                 <CardContent>
                                     <Box display="flex" justifyContent="space-between">
                                         <Typography className="subtitulo" fontWeight="bold" variant="subtitle1">
-                                            Tutorías recientes
+                                            Tutorías completadas recientemente
                                         </Typography>
 
                                         <Button size="small" variant="contained" sx={{
@@ -229,7 +238,8 @@ function Panel() {
                                             "&:hover": {
                                                 backgroundColor: "#1B5E20"
                                             }
-                                        }}>
+                                            }}
+                                            onClick={() => navigate("/Tutorias")}>
                                             ver historial
                                         </Button>
                                     </Box>
@@ -238,8 +248,19 @@ function Panel() {
                                         {tutorias.length === 0 ? (
                                             <Box>No hay tutorías registradas</Box>
                                         ) : (
-                                            tutorias.map((t) => (
-                                                <Box key={t.idSesion} className="tutoria-item">
+                                            tutorias
+                                            .filter(t => t.estado === "COMPLETADA")
+                                            .map((t) => (
+                                                <Box
+                                                    key={t.idSesion}
+                                                    className="tutoria-item"
+                                                    onClick={() => navigate(`/Tutoria/${t.idSesion}`)}
+                                                    sx={{
+                                                        cursor: "pointer",
+                                                        "&:hover": {
+                                                            backgroundColor: "#f5f5f5"
+                                                        }
+                                                    }}>
                                                     <div className="tutoria-iz">
                                                         <strong>{t.motivo}</strong>
                                                     </div>

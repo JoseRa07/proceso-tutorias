@@ -30,7 +30,7 @@ function Layout({ children, variant = "default" }) {
                         {isAuthenticated && (
                             <>
                                 <li><a href="/Panel">Inicio</a></li>
-                                <li><a href="/tutoria">Tutoría</a></li>
+                                <li><a href="/Tutorias">Tutorías</a></li>
                             </>
                         )}
 

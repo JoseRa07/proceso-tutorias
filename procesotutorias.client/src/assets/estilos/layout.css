@@ -126,7 +126,7 @@ footer {
     background: var(--color-primary);
     color: var(--color-secondary);
     padding: 20px 0;
-    margin-top: auto;
+    margin-top: 50px;
     margin-bottom: 0px;
 }    
 
@@ -239,8 +239,11 @@ footer {
     }
 
     .CerrarSesion-btn {
-        margin-top: 8px;
-        display: unset;
+        display: block;
+        width: 106%;
+        text-align: center;
+        padding: 15px;
+        border-top: 0.5px solid rgba(255,255,255,0.1);
     }
 
     .menu-toggle {
@@ -259,6 +262,10 @@ footer {
         -webkit-backdrop-filter: blur(3px);
     }
 
+    nav {
+        text-align: center;
+    }
+
     .menu {
         position: absolute;
         top: 70px;
@@ -275,6 +282,7 @@ footer {
 
         .menu ul {
             flex-direction: column;
+            align-items: center;
         }
 
         .menu li {
@@ -284,6 +292,8 @@ footer {
         .menu a {
             padding: 15px;
             border-top: 0.5px solid rgba(255,255,255,0.1);
+            text-align: center;
+            width: 100%;
         }
 
     .footerC:first-child {
