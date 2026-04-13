@@ -11,8 +11,8 @@
 }
 
 .panel-container {
-    margin-top: 80px;
-    margin-bottom: 50px;
+    margin-top: 20px;
+    margin-bottom: 20px;
     padding: 0 15px;
     width: 100vw;
     min-height: 80vh;
@@ -43,15 +43,6 @@
     gap: 10px;
 }
 
-.calendar-btn {
-    display: none;
-}
-
-.panel-sidebar {
-    width: 320px;
-    transition: transform 0.3s ease;
-}
-
 /* BOTONES ACCESO RAPIDO */
 .quick-actions {
     display: grid;
@@ -61,7 +52,7 @@
     max-width: 800px;
     margin-left: auto;
     margin-right: auto;
-    margin-top:5px;
+    margin-top: 5px;
 }
 
 .quick-card {
@@ -75,10 +66,6 @@
     .quick-card .MuiCardContent-root {
         padding: 10px !important;
     }
-
-.close-sidebar {
-    display: none !important;
-}
 
 .tutorias-recientes-list {
     max-height: 20vh;
@@ -119,7 +106,6 @@
     flex-direction: column;
     justify-content: center;
     align-items: flex-end;
-
     text-align: right;
     gap: 2px;
 }
@@ -139,14 +125,6 @@
         padding: 0 20px;
     }
 
-    .sidebar-overlay {
-        display: none;
-    }
-
-    .calendar-btn {
-        display: block;
-    }
-
     .panel-grid {
         flex-direction: column;
     }
@@ -154,41 +132,5 @@
     .quick-actions {
         grid-template-columns: repeat(3, 1fr);
         max-width: 100%;
-    }
-
-    .sidebar-overlay {
-        display: block;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.5);
-        z-index: 1100;
-    }
-
-    .panel-sidebar {
-        position: fixed;
-        top: 0;
-        right: 0;
-        height: 100%;
-        background: white;
-        z-index: 1200;
-        transform: translateX(100%);
-        width: 80%;
-        max-width: 300px;
-        box-shadow: -2px 0 10px rgba(0,0,0,0.2);
-    }
-
-        .panel-sidebar.open {
-            transform: translateX(0);
-        }
-
-    .close-sidebar {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        display: block !important;
-        z-index: 1300;
     }
 }

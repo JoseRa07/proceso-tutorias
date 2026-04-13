@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using ProcesoTutorias.Server.Models;
 using System;
 
@@ -39,6 +40,12 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 //app.UseHttpsRedirection();
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(@"C:\justificantes"),
+    RequestPath = "/justificantes"
+});
 
 app.UseAuthorization();
 

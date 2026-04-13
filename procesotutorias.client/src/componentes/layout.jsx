@@ -58,7 +58,9 @@ function Layout({ children, variant = "default" }) {
                 </nav>
             </header>
 
-            {children}
+            <div className={variant === "home" ? "" : "main-content"}>
+                {children}
+            </div>
 
             <footer>
                 <div className="footer-cont">

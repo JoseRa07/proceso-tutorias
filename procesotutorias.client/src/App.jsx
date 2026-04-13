@@ -6,6 +6,7 @@ import Panel from "./pages/Panel";
 import Acerca from "./pages/Acerca";
 import GestionTutores from "./pages/Administracion/GestionTutores";
 import Tutorias from "./pages/Tutoria/Tutorias";
+import Justificantes from "./pages/Justificantes/Justificantes";
 
 function App() {
     return (
@@ -18,6 +19,7 @@ function App() {
                 <Route path="/Tutorias" element={<Tutorias />} />
                 <Route path="/Tutoria/:id" element={<Tutoria />} />
                 <Route path="/Tutoria" element={<Tutoria />} />
+                <Route path="/Justificantes" element={<Justificantes />} />
             </Routes>
         </BrowserRouter>
     );

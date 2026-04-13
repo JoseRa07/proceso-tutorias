@@ -16,7 +16,6 @@ import {
 } from "@mui/material";
 
 import CloseIcon from "@mui/icons-material/Close";
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import SchoolIcon from '@mui/icons-material/School';
 import SettingsIcon from '@mui/icons-material/Settings';
 import TimelineIcon from '@mui/icons-material/Timeline';
@@ -40,7 +39,6 @@ function Panel() {
     });
 
     const [showCambiarPass, setShowCambiarPass] = useState(false);
-    const [openCalendar, setOpenCalendar] = useState(false);
 
     const navigate = useNavigate();
 
@@ -59,12 +57,12 @@ function Panel() {
         ],
         2: [
             { nombre: "Ver tutorías", ruta: "/Tutorias", icon: SchoolIcon },
-            { nombre: "Justificantes", ruta: "/#", icon: FilePresentIcon },
+            { nombre: "Justificantes", ruta: "/Justificantes", icon: FilePresentIcon },
             { nombre: "Configuración", ruta: "/#", icon: SettingsIcon }
         ],
         3: [
             { nombre: "Seguimiento", ruta: "/#", icon: TimelineIcon },
-            { nombre: "Justificantes", ruta: "/#", icon: FilePresentIcon },
+            { nombre: "Justificantes", ruta: "/Justificantes", icon: FilePresentIcon },
             { nombre: "Configuración", ruta: "/#", icon: SettingsIcon }
         ],
         4: []
@@ -127,17 +125,6 @@ function Panel() {
                                             {"Grupo: " + (grupo ? `${grupo.carrera}-${grupo.nombre}` : "Sin grupo")}
                                         </Typography>
                                     </>
-                                )}
-
-                                {usuario.id_rol !== 1 && usuario.id_rol !== 4 && ( // admin o no tutor
-                                <>
-                                    <IconButton
-                                        className="calendar-btn"
-                                        onClick={() => setOpenCalendar(!openCalendar)}
-                                    >
-                                        <CalendarMonthIcon />
-                                    </IconButton>
-                                </>
                                 )}
                             </Box>
                         </Box>
@@ -278,50 +265,6 @@ function Panel() {
                         </>
                         )}
                     </div>
-
-                    {usuario.id_rol !== 1 && usuario.id_rol !== 4 && ( // admin o no tutor
-                        <>
-                    {openCalendar && (
-                        <div
-                            className="sidebar-overlay"
-                            onClick={() => setOpenCalendar(false)}
-                        />
-                    )}
-
-                    <div className={`panel-sidebar ${openCalendar ? "open" : ""}`}>
-
-                        <IconButton
-                            className="close-sidebar"
-                            onClick={() => setOpenCalendar(false)}
-                        >
-                            <CloseIcon />
-                        </IconButton>
-
-                        <Card>
-                            <CardContent>
-
-                                <Typography variant="subtitle2" mb={2}>
-                                    Calendario
-                                </Typography>
-
-                                {[1, 2, 3].map((item) => (
-                                    <Box key={item} sx={{ mb: 2 }}>
-                                        <Typography variant="caption">
-                                            fecha
-                                        </Typography>
-
-                                        <Box sx={{ border: "1px solid #ccc", p: 1 }}>
-                                            item
-                                        </Box>
-                                    </Box>
-                                ))}
-
-                            </CardContent>
-                        </Card>
-
-                    </div>
-                        </>
-                    )}
                 </div>
             </div>
 

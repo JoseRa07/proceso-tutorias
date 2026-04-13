@@ -22,6 +22,7 @@ public partial class SistemaTutoriasContext : DbContext
     public virtual DbSet<Grupo> Grupos { get; set; }
 
     public virtual DbSet<Justificante> Justificantes { get; set; }
+    public DbSet<JustificanteArchivo> JustificanteArchivos { get; set; }
 
     public virtual DbSet<Maestro> Maestros { get; set; }
 
@@ -205,6 +206,22 @@ public partial class SistemaTutoriasContext : DbContext
             entity.Property(e => e.nombre)
                 .HasMaxLength(50)
                 .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<JustificanteArchivo>(entity =>
+        {
+            entity.HasKey(e => e.id_archivo);
+
+            entity.ToTable("JustificanteArchivo");
+
+            entity.Property(e => e.url)
+                .HasMaxLength(500)
+                .IsUnicode(false);
+
+            entity.HasOne(e => e.Justificante)
+                .WithMany()
+                .HasForeignKey(e => e.id_justificante)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<sesion_tutorium>(entity =>

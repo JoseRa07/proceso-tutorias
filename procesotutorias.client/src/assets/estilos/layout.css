@@ -6,6 +6,19 @@
     --color-secondary: #FFFFFF;
 }
 
+body, #root {
+    height: 100%;
+}
+
+#root {
+    display: flex;
+    flex-direction: column;
+}
+
+.main-content {
+    flex: 1;
+}
+
 .logo-cont {
     display: flex;
     align-items: center;
@@ -30,7 +43,6 @@ header #UTlabel {
     background: linear-gradient(to bottom, rgba(18, 25, 39, 1) 0%, rgba(18, 25, 39, 0) 100%) !important;
     background-color: transparent !important;
     color: var(--color-secondary);
-    position: absolute;
     z-index: 999;
     border: none;
 
@@ -39,7 +51,6 @@ header #UTlabel {
 .header-default {
     background-color: var(--color-primary);
     color: var(--color-secondary);
-    position: absolute;
     z-index: 999;
     border: none;
 }
@@ -54,6 +65,7 @@ header #UTlabel {
     box-sizing: border-box;
     left: 0;
     top: 0;
+    position:fixed;
 }
 
 .header-home #UTlabel, .header-default #UTlabel {
@@ -121,6 +133,12 @@ nav li a:hover{
     .CerrarSesion-btn:hover {
         color: #22d47b;
     }
+
+.main-content {
+    padding-top: 80px;
+    min-height: calc(100vh - 140px);
+    padding-bottom: 80px;
+}
 
 footer {
     background: var(--color-primary);
@@ -219,7 +237,7 @@ footer {
     margin-left: 5px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 970px) {
     .logo-cont {
         padding-top:10px;
         padding-bottom: 10px;

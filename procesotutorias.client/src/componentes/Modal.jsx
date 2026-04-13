@@ -48,6 +48,8 @@ function Modal({ isOpen, onClose, children }) {
                                 borderRadius: "12px",
                                 width: "100%",
                                 maxWidth: "400px",
+                                maxHeight: "90vh",
+                                overflowY: "auto",
                                 boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
                                 position: "relative"
                             }}
