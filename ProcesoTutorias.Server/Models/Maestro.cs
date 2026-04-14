@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization; 
 
 namespace ProcesoTutorias.Server.Models;
 
@@ -13,7 +14,9 @@ public partial class Maestro
 
     public DateOnly vigencia { get; set; }
 
+    [JsonIgnore] 
     public virtual ICollection<Tutor> Tutors { get; set; } = new List<Tutor>();
 
-    public virtual Usuario id_usuarioNavigation { get; set; } = null!;
+    [JsonIgnore] 
+    public virtual Usuario? id_usuarioNavigation { get; set; }
 }

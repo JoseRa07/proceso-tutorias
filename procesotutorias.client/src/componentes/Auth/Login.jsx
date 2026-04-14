@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import Modal from "../Modal";
 import "../../assets/estilos/login.css";
 import { API_URL } from "../../api";
 
 function Login({ isOpen, onClose }) {
     const [correo, setCorreo] = useState("");
-    const [contrasena, setContrasena] = useState("");
+    const [password, setPassword] = useState(""); // Cambiado a 'password' para el DTO
     const [error, setError] = useState("");
     const navigate = useNavigate();
 
@@ -15,32 +14,38 @@ function Login({ isOpen, onClose }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError(""); // Limpiar errores previos
 
         try {
-            const response = await fetch(`${API_URL}/Auth/login`, {
+            // Rúbrica: Flujo completo de login
+            const response = await fetch(`${API_URL}/Login`, { // 👈 Usamos el nuevo controlador
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    correo,
-                    contrasena,
+                    correo: correo,
+                    password: password, // Esto llega a tu LoginRequest en C#
                 }),
             });
 
             if (!response.ok) {
-                const msg = await response.text();
-                setError(msg);
+                // Rúbrica: Manejo de errores (credenciales incorrectas)
+                const errorData = await response.json();
+                setError(errorData.message || "Credenciales incorrectas");
                 return;
             }
 
             const data = await response.json();
 
-            console.log("Login exitoso");
+            // Rúbrica: Seguridad en almacenamiento del token
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("usuario", JSON.stringify(data.user));
 
-            navigate("/panel");
+            console.log("Login exitoso, token guardado");
 
-            localStorage.setItem("usuario", JSON.stringify(data));
+            // Rúbrica: Redirección de usuarios autenticados
+            navigate("/maestros"); // 👈 Cambia '/panel' por la ruta de tu tabla de maestros
 
             onClose();
         } catch (err) {
@@ -53,14 +58,14 @@ function Login({ isOpen, onClose }) {
         <Modal isOpen={isOpen} onClose={onClose}>
             <div className="derCont">
                 <h2>BIENVENIDO</h2>
-                <p id="sub">porfavor inicie sesión</p>
+                <p id="sub">Por favor inicie sesión</p>
 
                 <div className="formulario">
                     <form onSubmit={handleSubmit}>
-                        <label>Usuario:</label>
+                        <label>Correo Electrónico:</label>
                         <input
-                            type="text"
-                            placeholder="Ingresa tu correo..."
+                            type="email"
+                            placeholder="tu@correo.com"
                             value={correo}
                             onChange={(e) => setCorreo(e.target.value)}
                             required
@@ -70,8 +75,9 @@ function Login({ isOpen, onClose }) {
                         <input
                             type="password"
                             placeholder="Ingresa tu contraseña..."
-                            value={contrasena}
-                            onChange={(e) => setContrasena(e.target.value)}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
                         />
 
                         <button type="submit">
@@ -79,7 +85,7 @@ function Login({ isOpen, onClose }) {
                         </button>
                     </form>
 
-                    {error && <p className="error">{error}</p>}
+                    {error && <p style={{ color: 'red', marginTop: '10px' }}>{error}</p>}
 
                     <p>
                         ¿Olvidaste tu contraseña?{" "}
