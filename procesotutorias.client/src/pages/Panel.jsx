@@ -16,7 +16,6 @@ import {
 } from "@mui/material";
 
 import CloseIcon from "@mui/icons-material/Close";
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import SchoolIcon from '@mui/icons-material/School';
 import SettingsIcon from '@mui/icons-material/Settings';
 import TimelineIcon from '@mui/icons-material/Timeline';
@@ -40,7 +39,6 @@ function Panel() {
     });
 
     const [showCambiarPass, setShowCambiarPass] = useState(false);
-    const [openCalendar, setOpenCalendar] = useState(false);
 
     const navigate = useNavigate();
 
@@ -58,13 +56,13 @@ function Panel() {
             { nombre: "Configuración", ruta: "/#", icon: SettingsIcon }
         ],
         2: [
-            { nombre: "Ver tutorías", ruta: "/tutorias", icon: SchoolIcon },
-            { nombre: "Justificantes", ruta: "/#", icon: FilePresentIcon },
+            { nombre: "Ver tutorías", ruta: "/Tutorias", icon: SchoolIcon },
+            { nombre: "Justificantes", ruta: "/Justificantes", icon: FilePresentIcon },
             { nombre: "Configuración", ruta: "/#", icon: SettingsIcon }
         ],
         3: [
             { nombre: "Seguimiento", ruta: "/#", icon: TimelineIcon },
-            { nombre: "Justificantes", ruta: "/#", icon: FilePresentIcon },
+            { nombre: "Justificantes", ruta: "/Justificantes", icon: FilePresentIcon },
             { nombre: "Configuración", ruta: "/#", icon: SettingsIcon }
         ],
         4: []
@@ -127,17 +125,6 @@ function Panel() {
                                             {"Grupo: " + (grupo ? `${grupo.carrera}-${grupo.nombre}` : "Sin grupo")}
                                         </Typography>
                                     </>
-                                )}
-
-                                {usuario.id_rol !== 1 && usuario.id_rol !== 4 && ( // admin o no tutor
-                                <>
-                                    <IconButton
-                                        className="calendar-btn"
-                                        onClick={() => setOpenCalendar(!openCalendar)}
-                                    >
-                                        <CalendarMonthIcon />
-                                    </IconButton>
-                                </>
                                 )}
                             </Box>
                         </Box>
@@ -202,7 +189,16 @@ function Panel() {
                                             "No hay tutorías asignadas"
                                         ) : (
                                             tutoriasAsignadas.map((t) => (
-                                                <Box key={t.idSesion} className="tutoria-item">
+                                                <Box
+                                                    key={t.idSesion}
+                                                    className="tutoria-item"
+                                                    onClick={() => navigate(`/Tutoria/${t.idSesion}`)}
+                                                    sx={{
+                                                        cursor: "pointer",
+                                                        "&:hover": {
+                                                            backgroundColor: "#f5f5f5"
+                                                        }
+                                                    }}>
                                                     <div className="tutoria-iz">
                                                         <strong>{t.motivo}</strong>
                                                     </div>
@@ -221,7 +217,7 @@ function Panel() {
                                 <CardContent>
                                     <Box display="flex" justifyContent="space-between">
                                         <Typography className="subtitulo" fontWeight="bold" variant="subtitle1">
-                                            Tutorías recientes
+                                            Tutorías completadas recientemente
                                         </Typography>
 
                                         <Button size="small" variant="contained" sx={{
@@ -229,7 +225,8 @@ function Panel() {
                                             "&:hover": {
                                                 backgroundColor: "#1B5E20"
                                             }
-                                        }}>
+                                            }}
+                                            onClick={() => navigate("/Tutorias")}>
                                             ver historial
                                         </Button>
                                     </Box>
@@ -238,8 +235,19 @@ function Panel() {
                                         {tutorias.length === 0 ? (
                                             <Box>No hay tutorías registradas</Box>
                                         ) : (
-                                            tutorias.map((t) => (
-                                                <Box key={t.idSesion} className="tutoria-item">
+                                            tutorias
+                                            .filter(t => t.estado === "COMPLETADA")
+                                            .map((t) => (
+                                                <Box
+                                                    key={t.idSesion}
+                                                    className="tutoria-item"
+                                                    onClick={() => navigate(`/Tutoria/${t.idSesion}`)}
+                                                    sx={{
+                                                        cursor: "pointer",
+                                                        "&:hover": {
+                                                            backgroundColor: "#f5f5f5"
+                                                        }
+                                                    }}>
                                                     <div className="tutoria-iz">
                                                         <strong>{t.motivo}</strong>
                                                     </div>
@@ -257,50 +265,6 @@ function Panel() {
                         </>
                         )}
                     </div>
-
-                    {usuario.id_rol !== 1 && usuario.id_rol !== 4 && ( // admin o no tutor
-                        <>
-                    {openCalendar && (
-                        <div
-                            className="sidebar-overlay"
-                            onClick={() => setOpenCalendar(false)}
-                        />
-                    )}
-
-                    <div className={`panel-sidebar ${openCalendar ? "open" : ""}`}>
-
-                        <IconButton
-                            className="close-sidebar"
-                            onClick={() => setOpenCalendar(false)}
-                        >
-                            <CloseIcon />
-                        </IconButton>
-
-                        <Card>
-                            <CardContent>
-
-                                <Typography variant="subtitle2" mb={2}>
-                                    Calendario
-                                </Typography>
-
-                                {[1, 2, 3].map((item) => (
-                                    <Box key={item} sx={{ mb: 2 }}>
-                                        <Typography variant="caption">
-                                            fecha
-                                        </Typography>
-
-                                        <Box sx={{ border: "1px solid #ccc", p: 1 }}>
-                                            item
-                                        </Box>
-                                    </Box>
-                                ))}
-
-                            </CardContent>
-                        </Card>
-
-                    </div>
-                        </>
-                    )}
                 </div>
             </div>
 
