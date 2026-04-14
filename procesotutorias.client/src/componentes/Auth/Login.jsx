@@ -6,7 +6,7 @@ import { API_URL } from "../../api";
 
 function Login({ isOpen, onClose }) {
     const [correo, setCorreo] = useState("");
-    const [password, setPassword] = useState(""); // Cambiado a 'password' para el DTO
+    const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const navigate = useNavigate();
 
@@ -14,11 +14,15 @@ function Login({ isOpen, onClose }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(""); // Limpiar errores previos
+        setError("");
+
+        if (!correo.endsWith("@utnay.edu.mx")) {
+            setError("Solo se permiten correos institucionales (@utnay.edu.mx)");
+            return;
+        }
 
         try {
-            // Rúbrica: Flujo completo de login
-            const response = await fetch(`${API_URL}/Login`, { // Usamos el nuevo controlador
+            const response = await fetch(`${API_URL}/Login`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -37,15 +41,10 @@ function Login({ isOpen, onClose }) {
 
             const data = await response.json();
 
-            // Rúbrica: Seguridad en almacenamiento del token
             localStorage.setItem("token", data.token);
             localStorage.setItem("usuario", JSON.stringify(data.user));
 
-            console.log("Login exitoso, token guardado");
-
-            // Rúbrica: Redirección de usuarios autenticados
             navigate("/Panel");
-
             onClose();
         } catch (err) {
             console.error(err);
@@ -64,7 +63,7 @@ function Login({ isOpen, onClose }) {
                         <label>Correo Electrónico:</label>
                         <input
                             type="email"
-                            placeholder="tu@correo.com"
+                            placeholder="ejemplo@utnay.edu.mx"
                             value={correo}
                             onChange={(e) => setCorreo(e.target.value)}
                             required
@@ -84,7 +83,7 @@ function Login({ isOpen, onClose }) {
                         </button>
                     </form>
 
-                    {error && <p style={{ color: 'red', marginTop: '10px' }}>{error}</p>}
+                    {error && <p style={{ color: 'red', marginTop: '10px', fontWeight: 'bold' }}>{error}</p>}
 
                     <p>
                         ¿Olvidaste tu contraseña?{" "}
