@@ -1,49 +1,33 @@
 import { useState } from "react";
 import { API_URL } from "../api";
 
-export const useJustificante = (setPopup) => {
-
+export const useJustificante = (onSuccess) => {
     const [loading, setLoading] = useState(false);
+    const token = localStorage.getItem("token");
 
     const crear = async (usuario, data, archivos) => {
         try {
             setLoading(true);
-
             let urls = [];
-
             if (archivos && archivos.length > 0) {
                 urls = await subirArchivo(archivos);
             }
 
-            const payload = {
-                ...data,
-                archivos: urls
-            };
+            const payload = { ...data, archivos: urls };
 
             const res = await fetch(`${API_URL}/Justificante?idUsuario=${usuario.id_usuario}`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
                 body: JSON.stringify(payload)
             });
 
             if (!res.ok) throw new Error();
-
-            setPopup({
-                open: true,
-                type: "success",
-                titulo: "Justificante creado",
-                mensaje: "Se guardó correctamente"
-            });
-
+            if (onSuccess) onSuccess();
             return true;
-
         } catch {
-            setPopup({
-                open: true,
-                type: "error",
-                titulo: "Error",
-                mensaje: "No se pudo crear"
-            });
             return false;
         } finally {
             setLoading(false);
@@ -53,15 +37,16 @@ export const useJustificante = (setPopup) => {
     const editar = async (id, data) => {
         try {
             setLoading(true);
-
             await fetch(`${API_URL}/Justificante/${id}`, {
                 method: "PUT",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
                 body: JSON.stringify(data)
             });
-
+            if (onSuccess) onSuccess();
             return true;
-
         } catch {
             return false;
         } finally {
@@ -72,13 +57,12 @@ export const useJustificante = (setPopup) => {
     const eliminar = async (id) => {
         try {
             setLoading(true);
-
             await fetch(`${API_URL}/Justificante/${id}`, {
-                method: "DELETE"
+                method: "DELETE",
+                headers: { "Authorization": `Bearer ${token}` }
             });
-
+            if (onSuccess) onSuccess();
             return true;
-
         } catch {
             return false;
         } finally {
@@ -89,13 +73,12 @@ export const useJustificante = (setPopup) => {
     const aceptar = async (id) => {
         try {
             setLoading(true);
-
             await fetch(`${API_URL}/Justificante/aceptar/${id}`, {
-                method: "PUT"
+                method: "PUT",
+                headers: { "Authorization": `Bearer ${token}` }
             });
-
+            if (onSuccess) onSuccess();
             return true;
-
         } catch {
             return false;
         } finally {
@@ -105,24 +88,19 @@ export const useJustificante = (setPopup) => {
 
     const subirArchivo = async (files) => {
         if (!files || files.length === 0) return [];
-
         const formData = new FormData();
-
         for (let i = 0; i < files.length; i++) {
             formData.append("files", files[i]);
         }
-
         const res = await fetch(`${API_URL}/Justificante/upload`, {
             method: "POST",
+            headers: { "Authorization": `Bearer ${token}` },
             body: formData
         });
-
         if (!res.ok) throw new Error();
-
         return await res.json();
     };
 
     const BASE_URL = "http://localhost:5016";
-
     return { crear, editar, eliminar, aceptar, subirArchivo, loading, BASE_URL };
 };
