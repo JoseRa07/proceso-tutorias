@@ -11,21 +11,35 @@ export const usePanelInfo = (usuario) => {
     useEffect(() => {
         if (!usuario) return;
 
+        const token = localStorage.getItem("token");
+
         if (usuario.id_rol === 2 || usuario.id_rol === 3) {
             // CONSULTA DE GRUPO DEL USUARIO PARA MOSTRAR COMO SIGLASCARRERA-GRUPO
-            fetch(`${API_URL}/Grupo/${usuario.id_usuario}`)
+            fetch(`${API_URL}/Grupo/${usuario.id_usuario}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
                 .then(res => res.json())
                 .then(setGrupo)
                 .catch(console.error);
 
             // CONSULTA DE TUTORIAS RECIENTES CAMBIA DEPENDIENDO SI ES TUTOR O ALUMNO
-            fetch(`${API_URL}/Tutoria?idUsuario=${usuario.id_usuario}&idRol=${usuario.id_rol}`)
+            fetch(`${API_URL}/Tutoria`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
                 .then(res => res.json())
                 .then(data => setTutorias(data.data))
                 .catch(console.error);
 
             // CONSULTA DE TUTORIAS ASIGNADAS IGUAL CAMBIA DEPENDIENDO SI ES TUTOR O ALUMNO
-            fetch(`${API_URL}/Tutoria?idUsuario=${usuario.id_usuario}&idRol=${usuario.id_rol}&estado=PENDIENTE`)
+            fetch(`${API_URL}/Tutoria?estado=PENDIENTE`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
                 .then(res => res.json())
                 .then(data => setTutoriasAsignadas(data.data))
                 .catch(console.error);

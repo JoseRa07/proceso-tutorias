@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using ProcesoTutorias.Server.Models;
 using ProcesoTutorias.Server.DTOs;
 
@@ -6,6 +7,7 @@ namespace ProcesoTutorias.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class TutoriaController : ControllerBase
     {
         private readonly SistemaTutoriasContext _context;
@@ -70,11 +72,9 @@ namespace ProcesoTutorias.Server.Controllers
                         };
             }
 
-            // filtro por alumno
             if (idAlumno.HasValue)
                 query = query.Where(x => x.IdAlumno == idAlumno.Value);
 
-            // filtro por estado
             if (!string.IsNullOrEmpty(estado))
                 query = query.Where(x => x.Estado == estado);
 
@@ -137,8 +137,6 @@ namespace ProcesoTutorias.Server.Controllers
             return Ok(alumnos.ToList());
         }
 
-
-        // INSERTAR
         [HttpPost]
         public IActionResult CrearTutoria(int idUsuario, [FromBody] SesionTutoriaDto? dto)
         {
@@ -182,8 +180,6 @@ namespace ProcesoTutorias.Server.Controllers
             }
         }
 
-
-        // EDITAR
         [HttpPut("{idSesion}")]
         public IActionResult EditarTutoria(int idSesion, [FromBody] SesionTutoriaDto? dto)
         {
@@ -209,7 +205,6 @@ namespace ProcesoTutorias.Server.Controllers
             return Ok(new { message = "Tutoría actualizada" });
         }
 
-        // ELIMINAR
         [HttpPut("eliminar/{idSesion}")]
         public IActionResult EliminarTutoria(int idSesion)
         {
@@ -223,7 +218,6 @@ namespace ProcesoTutorias.Server.Controllers
             return Ok(new { message = "Tutoría eliminada" });
         }
 
-        //ACEPTAR
         [HttpPut("aceptar/{idSesion}")]
         public IActionResult AceptarTutoria(int idSesion)
         {
@@ -237,7 +231,6 @@ namespace ProcesoTutorias.Server.Controllers
             return Ok(new { message = "Tutoría aceptada" });
         }
 
-        //SOLICITAR EDICION
         [HttpPut("solicitar-edicion/{idSesion}")]
         public IActionResult SolicitarEdicion(int idSesion)
         {

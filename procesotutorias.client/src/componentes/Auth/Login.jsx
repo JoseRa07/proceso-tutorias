@@ -18,19 +18,18 @@ function Login({ isOpen, onClose }) {
 
         try {
             // Rúbrica: Flujo completo de login
-            const response = await fetch(`${API_URL}/Login`, { // 👈 Usamos el nuevo controlador
+            const response = await fetch(`${API_URL}/Login`, { // Usamos el nuevo controlador
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
                     correo: correo,
-                    password: password, // Esto llega a tu LoginRequest en C#
+                    password: password,
                 }),
             });
 
             if (!response.ok) {
-                // Rúbrica: Manejo de errores (credenciales incorrectas)
                 const errorData = await response.json();
                 setError(errorData.message || "Credenciales incorrectas");
                 return;
@@ -45,7 +44,7 @@ function Login({ isOpen, onClose }) {
             console.log("Login exitoso, token guardado");
 
             // Rúbrica: Redirección de usuarios autenticados
-            navigate("/maestros"); // 👈 Cambia '/panel' por la ruta de tu tabla de maestros
+            navigate("/Panel");
 
             onClose();
         } catch (err) {

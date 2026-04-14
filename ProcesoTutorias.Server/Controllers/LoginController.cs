@@ -66,7 +66,15 @@ namespace ProcesoTutorias.Server.Controllers
             return Ok(new
             {
                 token = new JwtSecurityTokenHandler().WriteToken(token),
-                user = new { usuario.nombre, usuario.correo, rol = usuario.id_rolNavigation?.nombre }
+                user = new
+                {
+                    id_usuario = usuario.id_usuario,
+                    id_rol = usuario.id_rol,
+                    nombre = usuario.nombre,
+                    correo = usuario.correo,
+                    rol = usuario.id_rolNavigation?.nombre,
+                    req_cambio_contra = usuario.req_cambio_contra
+                }
             });
         }
 

@@ -19,6 +19,13 @@ export const useTutoria = (usuario, id, setPopup) => {
     const [grupo, setGrupo] = useState(null);
     const [loading, setLoading] = useState(false);
 
+    const token = localStorage.getItem("token");
+
+    const authHeaders = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+    };
+
     const guardarTutoria = async () => {
         try {
             setPopup({
@@ -42,17 +49,15 @@ export const useTutoria = (usuario, id, setPopup) => {
             let res;
 
             if (id) {
-                // EDITAR
                 res = await fetch(`${API_URL}/Tutoria/${id}`, {
                     method: "PUT",
-                    headers: { "Content-Type": "application/json" },
+                    headers: authHeaders,
                     body: JSON.stringify(payload)
                 });
             } else {
-                // CREAR
                 res = await fetch(`${API_URL}/Tutoria?idUsuario=${usuario.id_usuario}`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: authHeaders,
                     body: JSON.stringify(payload)
                 });
             }
@@ -82,7 +87,10 @@ export const useTutoria = (usuario, id, setPopup) => {
 
     const eliminarTutoria = async () => {
         const res = await fetch(`${API_URL}/Tutoria/eliminar/${id}`, {
-            method: "PUT"
+            method: "PUT",
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
         });
 
         if (!res.ok) throw new Error();
@@ -90,7 +98,10 @@ export const useTutoria = (usuario, id, setPopup) => {
 
     const aceptarTutoria = async () => {
         const res = await fetch(`${API_URL}/Tutoria/aceptar/${id}`, {
-            method: "PUT"
+            method: "PUT",
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
         });
 
         if (!res.ok) throw new Error();
@@ -98,7 +109,10 @@ export const useTutoria = (usuario, id, setPopup) => {
 
     const solicitarEdicion = async () => {
         const res = await fetch(`${API_URL}/Tutoria/solicitar-edicion/${id}`, {
-            method: "PUT"
+            method: "PUT",
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
         });
 
         if (!res.ok) throw new Error();
@@ -123,7 +137,11 @@ export const useTutoria = (usuario, id, setPopup) => {
                 // EDITAR
                 if (id) {
 
-                    const res = await fetch(`${API_URL}/Tutoria/detalle?idSesion=${id}`);
+                    const res = await fetch(
+                        `${API_URL}/Tutoria/detalle?idSesion=${id}`,
+                        { headers: authHeaders }
+                    );
+
                     const data = await res.json();
 
                     setForm({
@@ -135,10 +153,9 @@ export const useTutoria = (usuario, id, setPopup) => {
                         motivo: data.motivo ? data.motivo.split(",") : [],
                         pts: data.ptsRelevantes || "",
                         acuerdos: data.compromisos || "",
-                        estado: data.estado 
+                        estado: data.estado
                     });
 
-                    // alumno
                     setAlumnos([
                         {
                             id_alumno: data.idAlumno,
@@ -146,8 +163,11 @@ export const useTutoria = (usuario, id, setPopup) => {
                         }
                     ]);
 
-                    // grupo
-                    const resGrupo = await fetch(`${API_URL}/Grupo/${data.idUsuarioAlumno}`);
+                    const resGrupo = await fetch(
+                        `${API_URL}/Grupo/${data.idUsuarioAlumno}`,
+                        { headers: authHeaders }
+                    );
+
                     const dataGrupo = await resGrupo.json();
                     setGrupo(dataGrupo);
                 }
@@ -155,15 +175,21 @@ export const useTutoria = (usuario, id, setPopup) => {
                 // NUEVA
                 else {
 
-                    // alumnos
                     if (usuario.id_rol !== 2) {
-                        const resAlumnos = await fetch(`${API_URL}/Tutoria/alumnos?idUsuario=${usuario.id_usuario}`);
+                        const resAlumnos = await fetch(
+                            `${API_URL}/Tutoria/alumnos?idUsuario=${usuario.id_usuario}`,
+                            { headers: authHeaders }
+                        );
+
                         const dataAlumnos = await resAlumnos.json();
                         setAlumnos(dataAlumnos || []);
                     }
 
-                    // grupo
-                    const resGrupo = await fetch(`${API_URL}/Grupo/${usuario.id_usuario}`);
+                    const resGrupo = await fetch(
+                        `${API_URL}/Grupo/${usuario.id_usuario}`,
+                        { headers: authHeaders }
+                    );
+
                     const dataGrupo = await resGrupo.json();
                     setGrupo(dataGrupo);
                 }
@@ -177,7 +203,6 @@ export const useTutoria = (usuario, id, setPopup) => {
                 });
 
             } catch (error) {
-
                 console.log(error);
 
                 setPopup({

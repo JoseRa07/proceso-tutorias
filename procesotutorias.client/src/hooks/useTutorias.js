@@ -12,6 +12,8 @@ export const useTutorias = (usuario, estado, alumnoId, setPopup) => {
     useEffect(() => {
         if (!usuario) return;
 
+        const token = localStorage.getItem("token");
+
         const fetchData = async () => {
 
             const startTime = Date.now();
@@ -21,7 +23,7 @@ export const useTutorias = (usuario, estado, alumnoId, setPopup) => {
 
                 const alreadyLoaded = sessionStorage.getItem(alreadyLoadedKey);
 
-                if (!alreadyLoaded || estado !== null || alumnoId !== "") {
+                if (!alreadyLoaded || estado || alumnoId) {
                     setPopup({
                         open: true,
                         loading: true,
@@ -36,7 +38,12 @@ export const useTutorias = (usuario, estado, alumnoId, setPopup) => {
                 if (estado) url += `&estado=${estado}`;
                 if (alumnoId) url += `&idAlumno=${alumnoId}`;
 
-                const res = await fetch(url);
+                const res = await fetch(url, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+
                 const data = await res.json();
 
                 const lista = Array.isArray(data)
@@ -46,7 +53,15 @@ export const useTutorias = (usuario, estado, alumnoId, setPopup) => {
                 setTutorias(lista);
 
                 if (usuario.id_rol !== 2) {
-                    const resAlumnos = await fetch(`${API_URL}/Tutoria/alumnos?idUsuario=${usuario.id_usuario}`);
+                    const resAlumnos = await fetch(
+                        `${API_URL}/Tutoria/alumnos?idUsuario=${usuario.id_usuario}`,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`
+                            }
+                        }
+                    );
+
                     const dataAlumnos = await resAlumnos.json();
                     setAlumnos(dataAlumnos || []);
                 }
@@ -56,7 +71,7 @@ export const useTutorias = (usuario, estado, alumnoId, setPopup) => {
                 const elapsed = Date.now() - startTime;
                 const delay = Math.max(1000 - elapsed, 0);
 
-                if (!alreadyLoaded || estado !== null || alumnoId !== "") {
+                if (!alreadyLoaded || estado || alumnoId) {
                     setTimeout(() => {
                         setPopup({
                             open: true,
@@ -70,6 +85,7 @@ export const useTutorias = (usuario, estado, alumnoId, setPopup) => {
 
             } catch (error) {
 
+                console.log(error);
                 setTutorias([]);
 
                 setTimeout(() => {
@@ -81,8 +97,6 @@ export const useTutorias = (usuario, estado, alumnoId, setPopup) => {
                         mensaje: "No se pudo obtener la información"
                     });
                 }, 1000);
-
-                console.log(error);
 
             } finally {
                 setLoading(false);
