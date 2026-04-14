@@ -4,10 +4,25 @@ import "../assets/estilos/layout.css";
 import utnLogo from "../assets/imagenes/UTN.png";
 import utlogo_deg from "../assets/imagenes/utlogo_degradado.png";
 
+import DropUpIcon from '@mui/icons-material/ArrowDropUp';
+import DropDownIcon from '@mui/icons-material/ArrowDropDown';
 function Layout({ children, variant = "default" }) {
     const [menuOpen, setMenuOpen] = useState(false);
     const usuario = JSON.parse(localStorage.getItem("usuario"));
     const isAuthenticated = !!usuario;
+
+    const [openSubmenu, setOpenSubmenu] = useState(null);
+
+    const toggleSubmenu = (menu) => {
+        setOpenSubmenu(openSubmenu === menu ? null : menu);
+    };
+
+    const rol = usuario?.id_rol;
+
+    const esAdmin = rol === 1;
+    const esAlumno = rol === 2;
+    const esTutor = rol === 3;
+    const esMaestro = rol === 4;
 
     return (
         <>
@@ -29,8 +44,73 @@ function Layout({ children, variant = "default" }) {
 
                         {isAuthenticated && (
                             <>
-                                <li><a href="/Panel">Inicio</a></li>
-                                <li><a href="/Tutorias">Tutorías</a></li>
+                                <li><a href="/Panel">Panel</a></li>
+
+                                {(esAlumno || esTutor || esAdmin) && (
+                                    <li className={`tiene-submenu ${openSubmenu === "tutorias" ? "activo" : ""}`}>
+                                        <span onClick={() => toggleSubmenu("tutorias")}>
+                                            Tutorías {openSubmenu === "tutorias" ? <DropUpIcon /> : <DropDownIcon />}
+                                        </span>
+                                        <ul className="submenu">
+
+                                            {(esAlumno || esTutor) && (
+                                                <li>
+                                                    <a href="/Tutorias">
+                                                        {esTutor ? "Gestión de tutorías" : "Historial de tutorías"}
+                                                    </a>
+                                                </li>
+                                            )}
+
+                                            {esTutor && (
+                                                <li><a href="/Seguimiento">Seguimiento</a></li>
+                                            )}
+
+                                            {(esAlumno || esTutor) && (
+                                                <li><a href="/Justificantes">Justificantes</a></li>
+                                            )}
+
+                                        </ul>
+                                    </li>
+                                )}
+
+                                {esAdmin && (
+                                    <li className={`tiene-submenu ${openSubmenu === "admin" ? "activo" : ""}`}>
+                                        <span onClick={() => toggleSubmenu("admin")}>
+                                            Administración {openSubmenu === "admin" ? <DropUpIcon /> : <DropDownIcon />}
+                                        </span>
+                                        <ul className="submenu">
+                                            <li><a href="/Asignacion">Asignación de tutores</a></li>
+                                            <li><a href="/Roles">Gestión de roles</a></li>
+                                            <li><a href="/Usuarios">Gestión de usuarios</a></li>
+                                            <li><a href="/Respaldos">Respaldos</a></li>
+                                        </ul>
+                                    </li>
+                                )}
+
+                                {!esMaestro && (
+                                    <li className={`tiene-submenu ${openSubmenu === "perfil" ? "activo" : ""}`}>
+                                        <span onClick={() => toggleSubmenu("perfil")}>
+                                            Perfil {openSubmenu === "perfil" ? <DropUpIcon /> : <DropDownIcon />}
+                                        </span>
+                                        <ul className="submenu">
+                                            <li><a href="/Perfil">Configuración de cuenta</a></li>
+                                            <li>
+                                                <button className="CerrarSesion-btn"
+                                                    onClick={() => {
+                                                        localStorage.removeItem("usuario");
+                                                        window.location.href = "/";
+                                                    }}
+                                                >
+                                                    Cerrar sesión
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                )}
+
+                                {esMaestro && (
+                                    <li><a href="/Perfil">Perfil</a></li>
+                                )}
                             </>
                         )}
 
@@ -41,19 +121,6 @@ function Layout({ children, variant = "default" }) {
                         )}
 
                         <li><a href="/Acerca-de">Acerca de</a></li>
-
-                        {isAuthenticated && (
-                            <li>
-                                <button className="CerrarSesion-btn"
-                                    onClick={() => {
-                                        localStorage.removeItem("usuario");
-                                        window.location.href = "/";
-                                    }}
-                                >
-                                    Cerrar sesión
-                                </button>
-                            </li>
-                        )}
                     </ul>
                 </nav>
             </header>
