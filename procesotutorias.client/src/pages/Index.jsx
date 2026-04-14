@@ -1,10 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
 import "../assets/estilos/inicio.css";
 import Layout from "../componentes/layout";
 import Login from "../componentes/Auth/Login";
 
 function Index() {
+    const navigate = useNavigate();
+
     const [showLogin, setShowLogin] = useState(false);
+    const [usuario] = useState(() => {
+        const usuarioStorage = localStorage.getItem("usuario");
+        return usuarioStorage ? JSON.parse(usuarioStorage) : null;
+    });
+
+    useEffect(() => {
+        if (usuario) {
+            navigate("/Panel");
+        }
+    }, [navigate]);
 
     return (
         <Layout variant="home">
