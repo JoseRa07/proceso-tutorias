@@ -8,6 +8,7 @@ import GestionTutores from "./pages/Administracion/GestionTutores";
 import Tutorias from "./pages/Tutoria/Tutorias";
 import Justificantes from "./pages/Justificantes/Justificantes";
 import Reportes from "./pages/Reportes";
+import BackupPanel from "./pages/BackupPanel";
 
 function App() {
     return (
@@ -22,6 +23,7 @@ function App() {
                 <Route path="/Tutoria" element={<Tutoria />} />
                 <Route path="/Justificantes" element={<Justificantes />} />
                 <Route path="/Reportes" element={<Reportes />} />
+                <Route path="/Respaldo" element={<BackupPanel />} />
             </Routes>
         </BrowserRouter>
     );

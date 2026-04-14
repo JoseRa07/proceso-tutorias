@@ -54,7 +54,8 @@ function Panel() {
         1: [
             { nombre: "Gestión de tutores", ruta: "/Gestion-de-tutores", icon: ManageAccountsIcon },
             { nombre: "Configuración", ruta: "/#", icon: SettingsIcon },
-            { nombre: "Reportes", ruta: "/Reportes", icon: FilePresentIcon }
+            { nombre: "Reportes", ruta: "/Reportes", icon: FilePresentIcon },
+            { nombre: "Respaldo", ruta: "/Respaldo", icon: FilePresentIcon }
         ],
         2: [
             { nombre: "Ver tutorías", ruta: "/Tutorias", icon: SchoolIcon },
