@@ -5,19 +5,23 @@ namespace ProcesoTutorias.Server.Models;
 
 public partial class Justificante
 {
-    public int id_justificante { get; set; }
+    public int IdJustificante { get; set; }
 
-    public int id_alumno { get; set; }
+    public int IdAlumno { get; set; }
 
-    public DateOnly fecha { get; set; }
+    public DateOnly Fecha { get; set; }
 
-    public string descripcion { get; set; } = null!;
+    public string Descripcion { get; set; } = null!;
 
-    public string estado { get; set; } = null!;
+    public string Estado { get; set; } = null!;
 
-    public DateTime? fecha_registro { get; set; }
+    public DateTime? FechaRegistro { get; set; }
 
-    public string? url_archivo { get; set; }
+    public int IdCuatrimestre { get; set; }
 
-    public virtual Alumno id_alumnoNavigation { get; set; } = null!;
+    public virtual Alumno IdAlumnoNavigation { get; set; } = null!;
+
+    public virtual Cuatrimestre IdCuatrimestreNavigation { get; set; } = null!;
+
+    public virtual ICollection<JustificanteArchivo> JustificanteArchivos { get; set; } = new List<JustificanteArchivo>();
 }

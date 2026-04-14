@@ -53,19 +53,24 @@ function Panel() {
     const rutasRol = {
         1: [
             { nombre: "Gestión de tutores", ruta: "/Gestion-de-tutores", icon: ManageAccountsIcon },
-            { nombre: "Configuración", ruta: "/#", icon: SettingsIcon }
+            { nombre: "Configuración", ruta: "/#", icon: SettingsIcon },
+            { nombre: "Reportes", ruta: "/Reportes", icon: FilePresentIcon }
         ],
         2: [
             { nombre: "Ver tutorías", ruta: "/Tutorias", icon: SchoolIcon },
             { nombre: "Justificantes", ruta: "/Justificantes", icon: FilePresentIcon },
-            { nombre: "Configuración", ruta: "/#", icon: SettingsIcon }
+            { nombre: "Configuración", ruta: "/#", icon: SettingsIcon },
+            { nombre: "Reportes", ruta: "/Reportes", icon: FilePresentIcon }
         ],
         3: [
             { nombre: "Seguimiento", ruta: "/#", icon: TimelineIcon },
             { nombre: "Justificantes", ruta: "/Justificantes", icon: FilePresentIcon },
-            { nombre: "Configuración", ruta: "/#", icon: SettingsIcon }
+            { nombre: "Configuración", ruta: "/#", icon: SettingsIcon },
+            { nombre: "Reportes", ruta: "/Reportes", icon: FilePresentIcon }
         ],
-        4: []
+        4: [
+            { nombre: "Reportes", ruta: "/Reportes", icon: FilePresentIcon }
+        ]
     };
 
     useEffect(() => {

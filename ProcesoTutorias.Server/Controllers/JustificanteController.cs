@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ProcesoTutorias.Server.Models;
 using ProcesoTutorias.Server.DTOs;
 
@@ -15,6 +16,9 @@ namespace ProcesoTutorias.Server.Controllers
             _context = context;
         }
 
+        // =========================
+        // GET (PAGINADO + FILTROS)
+        // =========================
         [HttpGet]
         public IActionResult Obtener(
             int idUsuario,
@@ -26,48 +30,52 @@ namespace ProcesoTutorias.Server.Controllers
         {
             IQueryable<JustificanteDto> query;
 
-            if (idRol == 2) // ALUMNO
+            // ================= ALUMNO =================
+            if (idRol == 2)
             {
-                query = from a in _context.Alumnos
-                        join u in _context.Usuarios on a.id_usuario equals u.id_usuario
-                        join j in _context.Justificantes on a.id_alumno equals j.id_alumno
-                        where a.id_usuario == idUsuario && j.estado != "INACTIVO"
-                        select new JustificanteDto
-                        {
-                            IdJustificante = j.id_justificante,
-                            Fecha = j.fecha,
-                            Descripcion = j.descripcion,
-                            Estado = j.estado,
-                            IdAlumno = a.id_alumno,
-                            NombreAlumno = u.nombre + " " + u.apellidos,
-                            Archivos = _context.JustificanteArchivos
-                                .Where(x => x.id_justificante == j.id_justificante)
-                                .Select(x => x.url)
-                                .ToList()
-                        };
+                query =
+                    from a in _context.Alumnos
+                    join u in _context.Usuarios on a.IdUsuario equals u.IdUsuario
+                    join j in _context.Justificantes on a.IdAlumno equals j.IdAlumno
+                    where a.IdUsuario == idUsuario && j.Estado != "INACTIVO"
+                    select new JustificanteDto
+                    {
+                        IdJustificante = j.IdJustificante,
+                        Fecha = j.Fecha,
+                        Descripcion = j.Descripcion,
+                        Estado = j.Estado,
+                        IdAlumno = a.IdAlumno,
+                        NombreAlumno = u.Nombre + " " + u.Apellidos,
+                        Archivos = _context.JustificanteArchivos
+                            .Where(x => x.IdJustificante == j.IdJustificante)
+                            .Select(x => x.Url)
+                            .ToList()
+                    };
             }
-            else // TUTOR
+            // ================= TUTOR =================
+            else
             {
-                query = from m in _context.Maestros
-                        join tu in _context.Tutors on m.id_maestro equals tu.id_maestro
-                        join g in _context.Grupos on tu.id_tutor equals g.id_tutor
-                        join a in _context.Alumnos on g.id_grupo equals a.id_grupo
-                        join u in _context.Usuarios on a.id_usuario equals u.id_usuario
-                        join j in _context.Justificantes on a.id_alumno equals j.id_alumno
-                        where m.id_usuario == idUsuario && j.estado != "INACTIVO"
-                        select new JustificanteDto
-                        {
-                            IdJustificante = j.id_justificante,
-                            Fecha = j.fecha,
-                            Descripcion = j.descripcion,
-                            Estado = j.estado,
-                            IdAlumno = a.id_alumno,
-                            NombreAlumno = u.nombre + " " + u.apellidos,
-                            Archivos = _context.JustificanteArchivos
-                                .Where(x => x.id_justificante == j.id_justificante)
-                                .Select(x => x.url)
-                                .ToList()
-                        };
+                query =
+                    from m in _context.Maestros
+                    join t in _context.Tutors on m.IdMaestro equals t.IdMaestro
+                    join g in _context.Grupos on t.IdTutor equals g.IdTutor
+                    join a in _context.Alumnos on g.IdGrupo equals a.IdGrupo
+                    join u in _context.Usuarios on a.IdUsuario equals u.IdUsuario
+                    join j in _context.Justificantes on a.IdAlumno equals j.IdAlumno
+                    where m.IdUsuario == idUsuario && j.Estado != "INACTIVO"
+                    select new JustificanteDto
+                    {
+                        IdJustificante = j.IdJustificante,
+                        Fecha = j.Fecha,
+                        Descripcion = j.Descripcion,
+                        Estado = j.Estado,
+                        IdAlumno = a.IdAlumno,
+                        NombreAlumno = u.Nombre + " " + u.Apellidos,
+                        Archivos = _context.JustificanteArchivos
+                            .Where(x => x.IdJustificante == j.IdJustificante)
+                            .Select(x => x.Url)
+                            .ToList()
+                    };
             }
 
             if (idAlumno.HasValue)
@@ -76,11 +84,10 @@ namespace ProcesoTutorias.Server.Controllers
             if (!string.IsNullOrEmpty(estado))
                 query = query.Where(x => x.Estado == estado);
 
-            query = query.OrderByDescending(x => x.Fecha);
-
             var total = query.Count();
 
             var data = query
+                .OrderByDescending(x => x.Fecha)
                 .Skip((pagina - 1) * tam)
                 .Take(tam)
                 .ToList();
@@ -88,53 +95,56 @@ namespace ProcesoTutorias.Server.Controllers
             return Ok(new { total, data });
         }
 
+        // =========================
+        // CREAR JUSTIFICANTE
+        // =========================
         [HttpPost]
         public IActionResult Crear(int idUsuario, [FromBody] JustificanteReq dto)
         {
-            var alumno = _context.Alumnos.FirstOrDefault(a => a.id_usuario == idUsuario);
+            var alumno = _context.Alumnos.FirstOrDefault(a => a.IdUsuario == idUsuario);
 
             if (alumno == null)
                 return NotFound("Alumno no encontrado");
 
             var j = new Justificante
             {
-                id_alumno = alumno.id_alumno,
-                fecha = dto.Fecha,
-                descripcion = dto.Descripcion,
-                estado = "PENDIENTE"
+                IdAlumno = alumno.IdAlumno,
+                Fecha = dto.Fecha,
+                Descripcion = dto.Descripcion,
+                Estado = "PENDIENTE",
+                FechaRegistro = DateTime.Now
             };
 
             _context.Justificantes.Add(j);
             _context.SaveChanges();
 
-            // guardar archivos
             if (dto.Archivos != null && dto.Archivos.Any())
             {
                 var archivos = dto.Archivos.Select(url => new JustificanteArchivo
                 {
-                    id_justificante = j.id_justificante,
-                    url = url
+                    IdJustificante = j.IdJustificante,
+                    Url = url
                 });
 
                 _context.JustificanteArchivos.AddRange(archivos);
                 _context.SaveChanges();
             }
 
-            // 🔥 RESPUESTA SIN CICLOS
-            var result = new JustificanteDto
+            return Ok(new JustificanteDto
             {
-                IdJustificante = j.id_justificante,
-                Fecha = j.fecha,
-                Descripcion = j.descripcion,
-                Estado = j.estado,
-                IdAlumno = j.id_alumno,
-                NombreAlumno = "", // opcional aquí
+                IdJustificante = j.IdJustificante,
+                Fecha = j.Fecha,
+                Descripcion = j.Descripcion,
+                Estado = j.Estado,
+                IdAlumno = j.IdAlumno,
+                NombreAlumno = "",
                 Archivos = dto.Archivos ?? new List<string>()
-            };
-
-            return Ok(result);
+            });
         }
 
+        // =========================
+        // ACEPTAR
+        // =========================
         [HttpPut("aceptar/{id}")]
         public IActionResult Aceptar(int id)
         {
@@ -143,13 +153,15 @@ namespace ProcesoTutorias.Server.Controllers
             if (j == null)
                 return NotFound();
 
-            j.estado = "ACEPTADO";
-
+            j.Estado = "ACEPTADO";
             _context.SaveChanges();
 
             return Ok();
         }
 
+        // =========================
+        // EDITAR
+        // =========================
         [HttpPut("{id}")]
         public IActionResult Editar(int id, [FromBody] JustificanteReq dto)
         {
@@ -158,19 +170,17 @@ namespace ProcesoTutorias.Server.Controllers
             if (j == null)
                 return NotFound();
 
-            j.descripcion = dto.Descripcion;
-            j.fecha = dto.Fecha;
+            j.Descripcion = dto.Descripcion;
+            j.Fecha = dto.Fecha;
 
             _context.SaveChanges();
 
-            return Ok(new
-            {
-                j.id_justificante,
-                j.descripcion,
-                j.fecha
-            });
+            return Ok(j);
         }
 
+        // =========================
+        // ELIMINAR (LOGICO)
+        // =========================
         [HttpDelete("{id}")]
         public IActionResult Eliminar(int id)
         {
@@ -179,58 +189,48 @@ namespace ProcesoTutorias.Server.Controllers
             if (j == null)
                 return NotFound();
 
-            j.estado = "INACTIVO";
-
+            j.Estado = "INACTIVO";
             _context.SaveChanges();
 
             return Ok();
         }
 
+        // =========================
+        // UPLOAD ARCHIVOS
+        // =========================
         [HttpPost("upload")]
         [RequestSizeLimit(50 * 1024 * 1024)]
         public IActionResult SubirArchivos([FromForm] List<IFormFile> files)
         {
-            try
+            if (files == null || files.Count == 0)
+                return BadRequest("No se enviaron archivos");
+
+            string carpeta = @"C:\justificantes\";
+
+            if (!Directory.Exists(carpeta))
+                Directory.CreateDirectory(carpeta);
+
+            var urls = new List<string>();
+
+            foreach (var file in files)
             {
-                if (files == null || files.Count == 0)
-                    return BadRequest("No se enviaron archivos");
+                var ext = Path.GetExtension(file.FileName).ToLower();
 
-                if (files.Count > 10)
-                    return BadRequest("Máximo 10 archivos permitidos");
+                var validos = new[] { ".jpg", ".jpeg", ".png", ".webp" };
 
-                string carpeta = @"C:\justificantes\";
+                if (!validos.Contains(ext))
+                    return BadRequest("Tipo no permitido");
 
-                if (!Directory.Exists(carpeta))
-                    Directory.CreateDirectory(carpeta);
+                var nombre = $"{Guid.NewGuid()}{ext}";
+                var ruta = Path.Combine(carpeta, nombre);
 
-                var urls = new List<string>();
+                using var stream = new FileStream(ruta, FileMode.Create);
+                file.CopyTo(stream);
 
-                foreach (var file in files)
-                {
-                    if (file.Length > 5 * 1024 * 1024)
-                        return BadRequest($"El archivo {file.FileName} excede 5MB");
-
-                    var extensiones = new[] { ".jpg", ".jpeg", ".png", ".webp" };
-                    var ext = Path.GetExtension(file.FileName).ToLower();
-
-                    if (!extensiones.Contains(ext))
-                        return BadRequest($"Tipo no permitido: {file.FileName}");
-
-                    var nombre = $"{Guid.NewGuid()}{ext}";
-                    var ruta = Path.Combine(carpeta, nombre);
-
-                    using var stream = new FileStream(ruta, FileMode.Create);
-                    file.CopyTo(stream);
-
-                    urls.Add($"/justificantes/{nombre}");
-                }
-
-                return Ok(urls);
+                urls.Add($"/justificantes/{nombre}");
             }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+
+            return Ok(urls);
         }
     }
 }

@@ -1,11 +1,15 @@
-﻿namespace ProcesoTutorias.Server.Models
-{
-    public class JustificanteArchivo
-    {
-        public int id_archivo { get; set; }
-        public int id_justificante { get; set; }
-        public string url { get; set; } = null!;
+﻿using System;
+using System.Collections.Generic;
 
-        public virtual Justificante Justificante { get; set; } = null!;
-    }
+namespace ProcesoTutorias.Server.Models;
+
+public partial class JustificanteArchivo
+{
+    public int IdArchivo { get; set; }
+
+    public int IdJustificante { get; set; }
+
+    public string Url { get; set; } = null!;
+
+    public virtual Justificante IdJustificanteNavigation { get; set; } = null!;
 }

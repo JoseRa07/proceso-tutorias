@@ -18,35 +18,34 @@ namespace ProcesoTutorias.Server.Controllers
         [HttpGet("{idUsuario}")]
         public IActionResult ObtenerGrupo(int idUsuario)
         {
-            //
             var grupoAlumno = (from a in _context.Alumnos
-                               join g in _context.Grupos on a.id_grupo equals g.id_grupo
-                               join c in _context.Carreras on g.id_carrera equals c.id_carrera into carr
+                               join g in _context.Grupos on a.IdGrupo equals g.IdGrupo
+                               join c in _context.Carreras on g.IdCarrera equals c.IdCarrera into carr
                                from c in carr.DefaultIfEmpty()
-                               where a.id_usuario == idUsuario
+                               where a.IdUsuario == idUsuario
                                select new GrupoDto
                                {
-                                   IdGrupo = g.id_grupo,
-                                   Nombre = g.nombre_grupo,
-                                   Carrera = c != null ? c.siglas : "Sin carrera",
-                                   Carrera_nombre = c != null ? c.nombre : "Sin Carrera"
+                                   IdGrupo = g.IdGrupo,
+                                   Nombre = g.NombreGrupo,
+                                   Carrera = c != null ? c.Siglas : "Sin carrera",
+                                   Carrera_nombre = c != null ? c.Nombre : "Sin Carrera"
                                }).FirstOrDefault();
 
             if (grupoAlumno != null)
                 return Ok(grupoAlumno);
 
             var grupoTutor = (from m in _context.Maestros
-                              join t in _context.Tutors on m.id_maestro equals t.id_maestro
-                              join g in _context.Grupos on t.id_tutor equals g.id_tutor
-                              join c in _context.Carreras on g.id_carrera equals c.id_carrera into carr
+                              join t in _context.Tutors on m.IdMaestro equals t.IdMaestro
+                              join g in _context.Grupos on t.IdTutor equals g.IdTutor
+                              join c in _context.Carreras on g.IdCarrera equals c.IdCarrera into carr
                               from c in carr.DefaultIfEmpty()
-                              where m.id_usuario == idUsuario
+                              where m.IdUsuario == idUsuario
                               select new GrupoDto
                               {
-                                  IdGrupo = g.id_grupo,
-                                  Nombre = g.nombre_grupo,
-                                  Carrera = c != null ? c.siglas : "Sin carrera",
-                                  Carrera_nombre = c != null ? c.nombre : "Sin Carrera"
+                                  IdGrupo = g.IdGrupo,
+                                  Nombre = g.NombreGrupo,
+                                  Carrera = c != null ? c.Siglas : "Sin carrera",
+                                  Carrera_nombre = c != null ? c.Nombre : "Sin Carrera"
                               }).FirstOrDefault();
 
             if (grupoTutor != null)

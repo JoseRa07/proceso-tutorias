@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import { useTutoria } from "../../hooks/useTutoria";
 
 import "../../assets/estilos/tutoria.css";
@@ -17,7 +19,8 @@ import Aceptar from "@mui/icons-material/DownloadDoneRounded";
 import Edicion from "@mui/icons-material/PreviewRounded";
 
 function Tutoria() {
-
+    
+    const navigate = useNavigate();
     const { id } = useParams();
 
     // popup global
@@ -46,6 +49,21 @@ function Tutoria() {
         const u = localStorage.getItem("usuario");
         return u ? JSON.parse(u) : null;
     });
+
+    useEffect(() => {
+        if (!usuario) {
+            navigate("/");
+            return;
+        }
+
+        // SOLO alumno o tutor
+        const rolesPermitidos = [2, 3];
+
+        if (!rolesPermitidos.includes(usuario.id_rol)) {
+            navigate("/panel");
+        }
+
+    }, [usuario, navigate]);
 
     // hook principal de tutoria
     const {

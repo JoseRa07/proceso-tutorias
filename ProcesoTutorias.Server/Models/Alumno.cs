@@ -5,19 +5,19 @@ namespace ProcesoTutorias.Server.Models;
 
 public partial class Alumno
 {
-    public int id_alumno { get; set; }
+    public int IdAlumno { get; set; }
 
-    public int id_usuario { get; set; }
+    public int IdUsuario { get; set; }
 
-    public string matricula { get; set; } = null!;
+    public string Matricula { get; set; } = null!;
 
-    public int id_grupo { get; set; }
+    public int IdGrupo { get; set; }
+
+    public virtual Grupo IdGrupoNavigation { get; set; } = null!;
+
+    public virtual Usuario IdUsuarioNavigation { get; set; } = null!;
 
     public virtual ICollection<Justificante> Justificantes { get; set; } = new List<Justificante>();
 
     public virtual ICollection<Tutorium> Tutoria { get; set; } = new List<Tutorium>();
-
-    public virtual Grupo id_grupoNavigation { get; set; } = null!;
-
-    public virtual Usuario id_usuarioNavigation { get; set; } = null!;
 }

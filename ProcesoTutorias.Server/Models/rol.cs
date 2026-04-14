@@ -3,11 +3,11 @@ using System.Collections.Generic;
 
 namespace ProcesoTutorias.Server.Models;
 
-public partial class rol
+public partial class Rol
 {
-    public int id_rol { get; set; }
+    public int IdRol { get; set; }
 
-    public string nombre { get; set; } = null!;
+    public string Nombre { get; set; } = null!;
 
     public virtual ICollection<Usuario> Usuarios { get; set; } = new List<Usuario>();
 }

@@ -15,7 +15,7 @@ function CambiarContra({ isOpen, obligatorio, onClose }) {
         e.preventDefault();
 
         try {
-            const response = await fetch(`${API_URL}/Auth/cambiar-contra`, {
+            const response = await fetch(`${API_URL}/Login/cambiar-contra`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

@@ -22,7 +22,6 @@ function Layout({ children, variant = "default" }) {
     const esAdmin = rol === 1;
     const esAlumno = rol === 2;
     const esTutor = rol === 3;
-    const esMaestro = rol === 4;
 
     return (
         <>
@@ -46,7 +45,7 @@ function Layout({ children, variant = "default" }) {
                             <>
                                 <li><a href="/Panel">Panel</a></li>
 
-                                {(esAlumno || esTutor || esAdmin) && (
+                                {(esAlumno || esTutor) && (
                                     <li className={`tiene-submenu ${openSubmenu === "tutorias" ? "activo" : ""}`}>
                                         <span onClick={() => toggleSubmenu("tutorias")}>
                                             Tutorías {openSubmenu === "tutorias" ? <DropUpIcon /> : <DropDownIcon />}
@@ -87,30 +86,27 @@ function Layout({ children, variant = "default" }) {
                                     </li>
                                 )}
 
-                                {!esMaestro && (
-                                    <li className={`tiene-submenu ${openSubmenu === "perfil" ? "activo" : ""}`}>
-                                        <span onClick={() => toggleSubmenu("perfil")}>
-                                            Perfil {openSubmenu === "perfil" ? <DropUpIcon /> : <DropDownIcon />}
-                                        </span>
-                                        <ul className="submenu">
-                                            <li><a href="/Perfil">Configuración de cuenta</a></li>
-                                            <li>
-                                                <button className="CerrarSesion-btn"
-                                                    onClick={() => {
-                                                        localStorage.removeItem("usuario");
-                                                        window.location.href = "/";
-                                                    }}
-                                                >
-                                                    Cerrar sesión
-                                                </button>
-                                            </li>
-                                        </ul>
-                                    </li>
-                                )}
+                                <li className={`tiene-submenu ${openSubmenu === "perfil" ? "activo" : ""}`}>
+                                    <span onClick={() => toggleSubmenu("perfil")}>
+                                        Perfil {openSubmenu === "perfil" ? <DropUpIcon /> : <DropDownIcon />}
+                                    </span>
 
-                                {esMaestro && (
-                                    <li><a href="/Perfil">Perfil</a></li>
-                                )}
+                                    <ul className="submenu">
+                                        <li><a href="/Perfil">Configuración de cuenta</a></li>
+
+                                        <li>
+                                            <button
+                                                className="CerrarSesion-btn"
+                                                onClick={() => {
+                                                    localStorage.removeItem("usuario");
+                                                    window.location.href = "/";
+                                                }}
+                                            >
+                                                Cerrar sesión
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </li>
                             </>
                         )}
 

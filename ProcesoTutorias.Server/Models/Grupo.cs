@@ -5,17 +5,19 @@ namespace ProcesoTutorias.Server.Models;
 
 public partial class Grupo
 {
-    public int id_grupo { get; set; }
+    public int IdGrupo { get; set; }
 
-    public string nombre_grupo { get; set; } = null!;
+    public string NombreGrupo { get; set; } = null!;
 
-    public int? id_tutor { get; set; }
+    public int? IdTutor { get; set; }
 
-    public int id_carrera { get; set; }
+    public int IdCarrera { get; set; }
 
     public virtual ICollection<Alumno> Alumnos { get; set; } = new List<Alumno>();
 
-    public virtual Carrera id_carreraNavigation { get; set; } = null!;
+    public virtual ICollection<GrupoCuatrimestre> GrupoCuatrimestres { get; set; } = new List<GrupoCuatrimestre>();
 
-    public virtual Tutor? id_tutorNavigation { get; set; }
+    public virtual Carrera IdCarreraNavigation { get; set; } = null!;
+
+    public virtual Tutor? IdTutorNavigation { get; set; }
 }
