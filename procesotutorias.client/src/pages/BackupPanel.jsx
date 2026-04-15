@@ -1,7 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useBackups } from "../hooks/useBackups";
+import Layout from "../componentes/layout";
 
 export default function BackupPanel() {
+    const navigate = useNavigate();
+
+    const [usuario] = useState(() =>
+        JSON.parse(localStorage.getItem("usuario"))
+    );
+
+    useEffect(() => {
+        if (!usuario || Number(usuario.id_rol) !== 1) {
+            navigate("/Panel", { replace: true });
+        }
+    }, [usuario, navigate]);
+
+    if (!usuario || Number(usuario.id_rol) !== 1) return null;
+
     const {
         fullBackup,
         differentialBackup,
@@ -23,87 +39,41 @@ export default function BackupPanel() {
     );
 
     return (
-        <div style={{ padding: 20 }}>
-            <h2>Gestión de Respaldos</h2>
+        <Layout>
+            <div style={{ padding: 20 }}>
+                <h2>Gestión de Respaldos</h2>
 
-            <div>
-                <h3>Manual</h3>
+                <div>
+                    <h3>Manual</h3>
 
-                <button onClick={fullBackup} disabled={loading}>
-                    Backup Completo
-                </button>
-
-                <button onClick={differentialBackup} disabled={loading}>
-                    Backup Incremental
-                </button>
-            </div>
-
-            <hr />
-
-            <div>
-                <h3>Programar Backup</h3>
-
-                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                    <select
-                        value={time.split(":")[0] || ""}
-                        onChange={(e) => {
-                            const min = time.split(":")[1] || "00";
-                            setTime(`${e.target.value}:${min}`);
-                        }}
-                    >
-                        <option value="">Hora</option>
-                        {hours.map((h) => (
-                            <option key={h} value={h}>
-                                {h}
-                            </option>
-                        ))}
-                    </select>
-
-                    <select
-                        value={time.split(":")[1] || ""}
-                        onChange={(e) => {
-                            const hr = time.split(":")[0] || "00";
-                            setTime(`${hr}:${e.target.value}`);
-                        }}
-                    >
-                        <option value="">Minuto</option>
-                        {minutes.map((m) => (
-                            <option key={m} value={m}>
-                                {m}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                <div style={{ marginTop: 10 }}>
-                    <button onClick={() => schedule("FULL", time)}>
-                        Programar FULL
+                    <button onClick={fullBackup} disabled={loading}>
+                        Backup Completo
                     </button>
 
-                    <button onClick={() => schedule("DIFFERENTIAL", time)}>
-                        Programar Incremental
+                    <button onClick={differentialBackup} disabled={loading}>
+                        Backup Incremental
                     </button>
                 </div>
+
+                <hr />
+
+                <div>
+                    <h3>Restaurar Backup</h3>
+
+                    <input
+                        placeholder="C:\\Respaldos\\archivo.bak"
+                        value={file}
+                        onChange={(e) => setFile(e.target.value)}
+                    />
+
+                    <button onClick={() => restore(file)}>
+                        Restaurar
+                    </button>
+                </div>
+
+                {loading && <p>Procesando...</p>}
+                {message && <p>{JSON.stringify(message)}</p>}
             </div>
-
-            <hr />
-
-            <div>
-                <h3>Restaurar Backup</h3>
-
-                <input
-                    placeholder="C:\\Respaldos\\archivo.bak"
-                    value={file}
-                    onChange={(e) => setFile(e.target.value)}
-                />
-
-                <button onClick={() => restore(file)}>
-                    Restaurar
-                </button>
-            </div>
-
-            {loading && <p>Procesando...</p>}
-            {message && <p>{JSON.stringify(message)}</p>}
-        </div>
+        </Layout>
     );
 }

@@ -35,7 +35,7 @@ namespace ProcesoTutorias.Server.Services
                 ? $@"BACKUP DATABASE [{dbName}] TO DISK = '{file}' WITH INIT;"
                 : $@"BACKUP DATABASE [{dbName}] TO DISK = '{file}' WITH DIFFERENTIAL;";
 
-            using var conn = new SqlConnection("Server=.\\SQLEXPRESS;Database=SistemaTutorias;Trusted_Connection=True;TrustServerCertificate=True;");
+            using var conn = new SqlConnection("Server=localhost;Database=SistemaTutorias;Trusted_Connection=True;TrustServerCertificate=True;");
             conn.Open();
 
             using var cmd = new SqlCommand(sql, conn);

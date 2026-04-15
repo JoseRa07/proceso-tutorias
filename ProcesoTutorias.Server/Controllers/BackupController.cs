@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using ProcesoTutorias.Server.Services;
+using System.Diagnostics;
+using System.Text;
 
 namespace ProcesoTutorias.Server.Controllers
 {
@@ -32,25 +34,29 @@ namespace ProcesoTutorias.Server.Controllers
         {
             string safePath = req.FilePath.Replace("\"", "");
 
-            string sql = $@"
-            USE master;
+            if (!System.IO.File.Exists(safePath))
+                return BadRequest("El archivo no existe");
 
-            ALTER DATABASE SistemaTutorias SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+            string script = System.IO.File.ReadAllText(safePath);
 
-            RESTORE DATABASE SistemaTutorias
-            FROM DISK = '{safePath}'
-            WITH REPLACE, RECOVERY;
+            var batches = script.Split(
+                new[] { "\r\nGO\r\n", "\nGO\n", "\rGO\r" },
+                StringSplitOptions.RemoveEmptyEntries
+            );
 
-            ALTER DATABASE SistemaTutorias SET MULTI_USER;
-            ";
-
-            using var conn = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
+            using var conn = new SqlConnection(
+                "Server=localhost;Database=master;Trusted_Connection=True;TrustServerCertificate=True;"
+            );
             conn.Open();
 
-            using var cmd = new SqlCommand(sql, conn);
-            cmd.ExecuteNonQuery();
+            foreach (var batch in batches)
+            {
+                using var cmd = new SqlCommand(batch, conn);
+                cmd.CommandTimeout = 0;
+                cmd.ExecuteNonQuery();
+            }
 
-            return Ok("Restauración completa");
+            return Ok("Restauración desde .sql completada correctamente");
         }
 
         [HttpPost("schedule")]
@@ -64,29 +70,128 @@ namespace ProcesoTutorias.Server.Controllers
         {
             string dbName = "SistemaTutorias";
 
-            string folder = "C:\\Respaldos";
+            string folder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                "Respaldos"
+            );
 
             if (!Directory.Exists(folder))
-            {
                 Directory.CreateDirectory(folder);
-            }
 
             string file = Path.Combine(
                 folder,
-                $"{dbName}_{type}_{DateTime.Now:yyyyMMdd_HHmmss}.bak"
+                $"{dbName}_{type}_{DateTime.Now:yyyyMMdd_HHmmss}.sql"
             );
 
-            string sql = type == "FULL"
-                ? $@"BACKUP DATABASE [{dbName}] TO DISK = '{file}' WITH INIT;"
-                : $@"BACKUP DATABASE [{dbName}] TO DISK = '{file}' WITH DIFFERENTIAL;";
+            string connectionString = _config.GetConnectionString("DefaultConnection");
+            var builder = new SqlConnectionStringBuilder(connectionString);
 
-            using var conn = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
-            conn.Open();
+            string server = builder.DataSource;
+            string database = builder.InitialCatalog;
 
-            using var cmd = new SqlCommand(sql, conn);
-            cmd.ExecuteNonQuery();
+            string auth = builder.IntegratedSecurity
+                ? "-E"
+                : $"-U {builder.UserID} -P {builder.Password}";
 
-            return Ok(new { message = "Backup generado correctamente", file });
+            string query = $@"
+SET NOCOUNT ON;
+
+PRINT 'CREATE DATABASE [{database}]';
+PRINT 'GO';
+PRINT 'USE [{database}]';
+PRINT 'GO';
+
+DECLARE @table NVARCHAR(256);
+
+DECLARE table_cursor CURSOR FOR
+SELECT TABLE_SCHEMA + '.' + TABLE_NAME
+FROM INFORMATION_SCHEMA.TABLES
+WHERE TABLE_TYPE = 'BASE TABLE';
+
+OPEN table_cursor;
+FETCH NEXT FROM table_cursor INTO @table;
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    PRINT '---------------------------------';
+    PRINT 'TABLA: ' + @table;
+
+    DECLARE @createTable NVARCHAR(MAX) = 'CREATE TABLE ' + @table + ' (';
+
+    SELECT @createTable = @createTable +
+        COLUMN_NAME + ' ' +
+        DATA_TYPE +
+        CASE 
+            WHEN CHARACTER_MAXIMUM_LENGTH IS NOT NULL 
+            THEN '(' + 
+                CASE 
+                    WHEN CHARACTER_MAXIMUM_LENGTH = -1 THEN 'MAX'
+                    ELSE CAST(CHARACTER_MAXIMUM_LENGTH AS VARCHAR)
+                END + ')'
+            ELSE ''
+        END + ',' 
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME = PARSENAME(@table,1);
+
+    SET @createTable = LEFT(@createTable, LEN(@createTable)-1) + ')';
+
+    PRINT @createTable;
+    PRINT 'GO';
+
+    DECLARE @sql NVARCHAR(MAX) = 'SELECT ''INSERT INTO ' + @table + ' VALUES ('' + ';
+
+    SELECT @sql = @sql + 
+        STRING_AGG(
+            'ISNULL('''''''' + REPLACE(CAST(' + COLUMN_NAME + ' AS NVARCHAR(MAX)), '''''''', '''''''''''') + '''''''',''NULL'')',
+            ' + '','' + '
+        )
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME = PARSENAME(@table,1);
+
+    SET @sql = @sql + ' + '')'' FROM ' + @table;
+
+    EXEC(@sql);
+
+    PRINT 'GO';
+
+    FETCH NEXT FROM table_cursor INTO @table;
+END;
+
+CLOSE table_cursor;
+DEALLOCATE table_cursor;
+";
+
+            var process = new Process();
+            process.StartInfo.FileName = "sqlcmd";
+            process.StartInfo.Arguments = $"-S {server} -d {database} {auth} -C -Q \"{query}\" -o \"{file}\"";
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.RedirectStandardError = true;
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.CreateNoWindow = true;
+
+            process.Start();
+
+            string output = process.StandardOutput.ReadToEnd();
+            string error = process.StandardError.ReadToEnd();
+
+            process.WaitForExit();
+
+            if (!System.IO.File.Exists(file))
+            {
+                return BadRequest(new
+                {
+                    message = "No se creó el archivo",
+                    error
+                });
+            }
+
+            return Ok(new
+            {
+                message = "Backup SQL generado correctamente",
+                file,
+                output,
+                error
+            });
         }
 
         [HttpGet("jobs")]

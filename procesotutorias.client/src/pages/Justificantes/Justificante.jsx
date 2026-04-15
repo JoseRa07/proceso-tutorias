@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useJustificante } from "../../hooks/useJustificante";
-import Layout from "../../componentes/Layout";
+import Layout from "../../componentes/layout";
 import Alerta from "../../componentes/Alerta";
 
 function Justificante({ data, onClose }) {
