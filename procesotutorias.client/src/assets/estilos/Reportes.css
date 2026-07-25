@@ -1,0 +1,222 @@
+.reportes-cont {
+    width: 95vw;
+    min-height: calc(100vh - 120px);
+    margin: 0 auto 20px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.main-content.reportes-layout-gradient {
+    padding-bottom: 0;
+    background: linear-gradient(
+        to bottom,
+        #fff 0%,
+        #fff 58%,
+        rgba(34,212,123,0.08) 76%,
+        rgba(34,212,123,0.28) 100%
+    );
+}
+
+.main-content.reportes-layout-gradient + footer {
+    margin-top: 0;
+}
+
+.reportes-head,
+.reportes-pdf,
+.reporte-card,
+.reporte-metric-card {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.reportes-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+    padding: 20px;
+    background:
+        linear-gradient(135deg, rgba(32,168,94,0.12), rgba(255,255,255,0) 46%),
+        #fff;
+    border: 1px solid rgba(18,25,39,0.06);
+}
+
+.reportes-eyebrow {
+    width: fit-content;
+    display: inline-flex;
+    margin-bottom: 8px;
+    color: #1B5E20;
+    background: #eef7f1;
+    border-radius: 16px;
+    padding: 5px 12px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.reportes-title {
+    color: #121927;
+}
+
+.reportes-desc,
+.reporte-muted {
+    color: #596170;
+    line-height: 1.55;
+}
+
+.reportes-pdf {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.reportes-pdf-header {
+    text-align: center;
+}
+
+.reportes-metricas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+}
+
+.reporte-metric-card {
+    border-left: 8px solid #20A85E;
+}
+
+.reporte-metric-card.warning {
+    border-left-color: #ff9800;
+}
+
+.reporte-metric-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+    background: #eef7f1;
+    color: #20A85E;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.reporte-metric-card.warning .reporte-metric-icon {
+    background: #fff4e5;
+    color: #a05a00;
+}
+
+.reportes-main-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
+}
+
+.reporte-card {
+    border: 1px solid rgba(18,25,39,0.06);
+}
+
+.reporte-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #20A85E;
+}
+
+.reporte-progress {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+    margin-top: 16px;
+}
+
+.reporte-progress .MuiLinearProgress-root {
+    height: 10px;
+    border-radius: 10px;
+    background-color: #eef7f1;
+}
+
+.reporte-progress .MuiLinearProgress-bar {
+    background-color: #20A85E;
+}
+
+.reporte-status-grid {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+    color: #596170;
+    font-size: 13px;
+}
+
+.reporte-recomendaciones {
+    margin: 12px 0 0;
+    padding-left: 18px;
+    color: #121927;
+    line-height: 1.6;
+}
+
+.reporte-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.reporte-list-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px;
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+.reporte-list-values {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.reporte-chip-warning {
+    background: #fff4e5 !important;
+    color: #a05a00 !important;
+}
+
+.reporte-empty,
+.reportes-loading,
+.reportes-empty-page {
+    padding: 18px;
+    border-radius: 8px;
+    background: #fafafa;
+    color: #596170;
+    text-align: center;
+}
+
+@media (max-width: 900px) {
+    .reportes-main-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .reportes-cont {
+        padding: 10px;
+    }
+
+    .reportes-head,
+    .reporte-list-row {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .reporte-list-values {
+        justify-content: flex-start;
+    }
+}

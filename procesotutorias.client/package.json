@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "validate:i18n": "node scripts/validate-i18n.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

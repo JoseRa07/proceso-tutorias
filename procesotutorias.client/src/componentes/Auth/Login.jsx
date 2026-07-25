@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import Modal from "../Modal";
 import "../../assets/estilos/login.css";
 import { API_URL } from "../../api";
+import { useI18n } from "../../i18n/I18nContext";
 
 function Login({ isOpen, onClose }) {
     const [correo, setCorreo] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const navigate = useNavigate();
+    const { t } = useI18n();
 
     if (!isOpen) return null;
 
@@ -17,7 +19,7 @@ function Login({ isOpen, onClose }) {
         setError("");
 
         if (!correo.endsWith("@utnay.edu.mx")) {
-            setError("Solo se permiten correos institucionales (@utnay.edu.mx)");
+            setError(t("auth.institutionalEmailOnly"));
             return;
         }
 
@@ -34,8 +36,8 @@ function Login({ isOpen, onClose }) {
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                setError(errorData.message || "Credenciales incorrectas");
+                await response.json().catch(() => null);
+                setError(t("auth.invalidCredentials"));
                 return;
             }
 
@@ -48,19 +50,19 @@ function Login({ isOpen, onClose }) {
             onClose();
         } catch (err) {
             console.error(err);
-            setError("Error al conectar con el servidor");
+            setError(t("auth.connectionError"));
         }
     };
 
     return (
         <Modal isOpen={isOpen} onClose={onClose}>
             <div className="derCont">
-                <h2>BIENVENIDO</h2>
-                <p id="sub">Por favor inicie sesión</p>
+                <h2>{t("auth.welcome")}</h2>
+                <p id="sub">{t("auth.signInPrompt")}</p>
 
                 <div className="formulario">
                     <form onSubmit={handleSubmit}>
-                        <label>Correo Electrónico:</label>
+                        <label>{t("auth.email")}:</label>
                         <input
                             type="email"
                             placeholder="ejemplo@utnay.edu.mx"
@@ -69,25 +71,25 @@ function Login({ isOpen, onClose }) {
                             required
                         />
 
-                        <label>Contraseña:</label>
+                        <label>{t("auth.password")}:</label>
                         <input
                             type="password"
-                            placeholder="Ingresa tu contraseña..."
+                            placeholder={t("auth.passwordPlaceholder")}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
                         />
 
                         <button type="submit">
-                            Iniciar Sesión
+                            {t("auth.signIn")}
                         </button>
                     </form>
 
                     {error && <p style={{ color: 'red', marginTop: '10px', fontWeight: 'bold' }}>{error}</p>}
 
                     <p>
-                        ¿Olvidaste tu contraseña?{" "}
-                        <a href="#">Recuperar contraseña</a>
+                        {t("auth.forgotPassword")}{" "}
+                        <a href="#">{t("auth.recoverPassword")}</a>
                     </p>
                 </div>
             </div>

@@ -109,6 +109,10 @@ namespace ProcesoTutorias.Server.Controllers
                             ptsRelevantes = s.PtsRelevantes,
                             compromisos = s.CompromisosAcuerdos,
                             estado = s.Estado,
+                            idSeguimiento = s.IdSeguimiento,
+                            tituloSeguimiento = s.IdSeguimientoNavigation != null
+                                ? s.IdSeguimientoNavigation.Titulo
+                                : null,
                             idAlumno = a.IdAlumno,
                             nombreAlumno = u.Nombre + " " + u.Apellidos,
                             idUsuarioAlumno = u.IdUsuario
@@ -172,7 +176,11 @@ namespace ProcesoTutorias.Server.Controllers
                 _context.SesionTutoria.Add(sesion);
                 _context.SaveChanges();
 
-                return Ok(new { message = "Tutoría creada correctamente" });
+                return Ok(new
+                {
+                    message = "Tutoría creada correctamente",
+                    idSesion = sesion.IdSesion
+                });
             }
             catch (Exception ex)
             {

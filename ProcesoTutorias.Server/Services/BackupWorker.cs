@@ -1,45 +1,40 @@
-﻿using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Hosting;
-using ProcesoTutorias.Server.Models;
-
 namespace ProcesoTutorias.Server.Services
 {
     public class BackupWorker : BackgroundService
     {
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly ILogger<BackupWorker> _logger;
+
+        public BackupWorker(IServiceScopeFactory scopeFactory, ILogger<BackupWorker> logger)
         {
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                var now = DateTime.Now;
-
-                foreach (var job in BackupScheduler.GetJobs())
-                {
-                    var jobTime = DateTime.Today.Add(job.Time);
-
-                    if (Math.Abs((jobTime - now).TotalMinutes) < 1)
-                    {
-                        ExecuteBackup(job.Type);
-                    }
-                }
-
-                await Task.Delay(30000, stoppingToken);
-            }
+            _scopeFactory = scopeFactory;
+            _logger = logger;
         }
 
-        private void ExecuteBackup(string type)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            string dbName = "SistemaTutorias";
-            string file = $"C:\\Respaldos\\{dbName}_{type}_{DateTime.Now:yyyyMMdd_HHmmss}.bak";
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
 
-            string sql = type == "FULL"
-                ? $@"BACKUP DATABASE [{dbName}] TO DISK = '{file}' WITH INIT;"
-                : $@"BACKUP DATABASE [{dbName}] TO DISK = '{file}' WITH DIFFERENTIAL;";
+            while (await timer.WaitForNextTickAsync(stoppingToken))
+            {
+                var dueJobs = BackupScheduler.GetDueJobs(DateTime.Now);
 
-            using var conn = new SqlConnection("Server=.\\SQLEXPRESS;Database=SistemaTutorias;Trusted_Connection=True;TrustServerCertificate=True;");
-            conn.Open();
-
-            using var cmd = new SqlCommand(sql, conn);
-            cmd.ExecuteNonQuery();
+                foreach (var job in dueJobs)
+                {
+                    try
+                    {
+                        using var scope = _scopeFactory.CreateScope();
+                        var backupService = scope.ServiceProvider.GetRequiredService<LogicalBackupService>();
+                        var result = await backupService.CreateBackupAsync(job.Type, stoppingToken);
+                        BackupScheduler.MarkCompleted(job.Id, result.File);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error al ejecutar respaldo programado {JobId}", job.Id);
+                        BackupScheduler.MarkFailed(job.Id, "No se pudo ejecutar el respaldo programado.");
+                    }
+                }
+            }
         }
     }
 }

@@ -4,9 +4,11 @@ import { useNavigate } from "react-router-dom";
 import "../assets/estilos/inicio.css";
 import Layout from "../componentes/layout";
 import Login from "../componentes/Auth/Login";
+import { useI18n } from "../i18n/I18nContext";
 
 function Index() {
     const navigate = useNavigate();
+    const { t } = useI18n();
 
     const [showLogin, setShowLogin] = useState(false);
     const [usuario] = useState(() => {
@@ -18,20 +20,20 @@ function Index() {
         if (usuario) {
             navigate("/Panel");
         }
-    }, [navigate]);
+    }, [navigate, usuario]);
 
     return (
         <Layout variant="home">
             <div className="container">
                 <div className="inicio-cont">
                     <div className="cont">
-                        <h1>Bienvenido al Sistema de Tutorías</h1>
+                        <h1>{t("auth.welcomeHome")}</h1>
 
                         <button
                             className="btn"
                             onClick={() => setShowLogin(true)}
                         >
-                            Iniciar Sesión
+                            {t("auth.signIn")}
                         </button>
                     </div>
                 </div>

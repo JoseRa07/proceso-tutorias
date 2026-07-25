@@ -220,6 +220,93 @@ footer {
     position: relative;
 }
 
+.language-trigger {
+    min-width: 108px;
+    height: 40px;
+    padding: 0 9px;
+    border: 1px solid rgba(255, 255, 255, 0.82);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.96);
+    color: #168f50;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 7px 20px rgba(0, 0, 0, 0.12);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+
+.language-trigger:hover,
+.language-trigger:focus-visible {
+    background: #22d47b;
+    color: #fff;
+    box-shadow: 0 9px 24px rgba(34, 212, 123, 0.3);
+    transform: translateY(-1px);
+    outline: none;
+}
+
+.language-trigger > svg:first-child {
+    font-size: 20px;
+}
+
+.language-trigger .language-caret {
+    font-size: 18px;
+    margin-left: -2px;
+}
+
+.language-submenu {
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.48);
+    background: linear-gradient(145deg, rgba(20, 143, 79, 0.96), rgba(34, 212, 123, 0.92)) !important;
+    box-shadow: 0 14px 30px rgba(9, 86, 46, 0.28);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.language-option {
+    width: 100%;
+    padding: 11px 14px;
+    border: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+    background: transparent;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 160ms ease, padding-left 160ms ease;
+}
+
+.language-submenu .language-option {
+    text-align: left;
+}
+
+.language-option:hover,
+.language-option:focus-visible,
+.language-option.selected {
+    background: rgba(255, 255, 255, 0.2);
+    padding-left: 18px;
+    outline: none;
+}
+
+.language-option span {
+    font-weight: 800;
+}
+
+.language-option small {
+    font-size: 11px;
+    opacity: 0.9;
+}
+
     .tiene-submenu > span {
         color: var(--color-secondary);
         font-weight: bold;
@@ -297,6 +384,10 @@ footer {
 
     .submenu a {
         text-align: left;
+    }
+
+    .idioma-menu {
+        margin-left: 8px;
     }
 }
 
@@ -387,6 +478,23 @@ footer {
 
     .tiene-submenu > span {
         margin-left: 20px;
+    }
+
+    .idioma-menu {
+        padding: 10px 0 14px;
+    }
+
+    .language-trigger {
+        width: auto;
+        min-width: 116px;
+    }
+
+    .language-submenu {
+        width: min(320px, calc(100% - 32px));
+        margin: 8px auto 0;
+        border-radius: 10px;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
     }
 
     .tiene-submenu.activo > .submenu {

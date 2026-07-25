@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "Client + Server",
+    "Projects": [
+      {
+        "Path": "ProcesoTutorias.Server\\ProcesoTutorias.Server.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "procesotutorias.client\\procesotutorias.client.esproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

@@ -1,11 +1,13 @@
 import { useState } from "react";
 import Modal from "../Modal";
 import { API_URL } from "../../api";
+import { useI18n } from "../../i18n/I18nContext";
 
 function CambiarContra({ isOpen, obligatorio, onClose }) {
     const [nuevaContra, setNuevaContra] = useState("");
     const [confirmarContra, setConfirmarContra] = useState("");
     const [error, setError] = useState("");
+    const { locale, t } = useI18n();
 
     if (!isOpen) return null;
 
@@ -29,7 +31,7 @@ function CambiarContra({ isOpen, obligatorio, onClose }) {
 
             if (!response.ok) {
                 const msg = await response.text();
-                setError(msg);
+                setError(locale === "es-MX" && msg ? msg : t("common.requestFailed"));
                 return;
             }
 
@@ -48,18 +50,18 @@ function CambiarContra({ isOpen, obligatorio, onClose }) {
 
         } catch (err) {
             console.error(err);
-            setError("Error al conectar con el servidor");
+            setError(t("auth.connectionError"));
         }
     };
 
     return (
         <Modal isOpen={isOpen} onClose={obligatorio ? null : onClose}>
             <div className="derCont">
-                <h2>Cambiar Contraseña</h2>
+                <h2>{t("auth.changePassword")}</h2>
 
                 <div className="formulario">
                     <form onSubmit={handleSubmit}>
-                        <label>Nueva contraseña:</label>
+                        <label>{t("auth.newPassword")}:</label>
                         <input
                             type="password"
                             value={nuevaContra}
@@ -67,7 +69,7 @@ function CambiarContra({ isOpen, obligatorio, onClose }) {
                             required
                         />
 
-                        <label>Confirma tu contraseña:</label>
+                        <label>{t("auth.confirmPassword")}:</label>
                         <input
                             type="password"
                             value={confirmarContra}
@@ -75,7 +77,7 @@ function CambiarContra({ isOpen, obligatorio, onClose }) {
                             required
                         />
 
-                        <button type="submit">Confirmar</button>
+                        <button type="submit">{t("auth.confirm")}</button>
                     </form>
 
                     {error && <p className="error">{error}</p>}

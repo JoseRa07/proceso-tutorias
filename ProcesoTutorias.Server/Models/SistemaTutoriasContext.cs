@@ -33,6 +33,8 @@ public partial class SistemaTutoriasContext : DbContext
 
     public virtual DbSet<Rol> Rols { get; set; }
 
+    public virtual DbSet<Seguimiento> Seguimientos { get; set; }
+
     public virtual DbSet<SesionTutorium> SesionTutoria { get; set; }
 
     public virtual DbSet<Tutor> Tutors { get; set; }
@@ -244,11 +246,56 @@ public partial class SistemaTutoriasContext : DbContext
                 .HasColumnName("nombre");
         });
 
+        modelBuilder.Entity<Seguimiento>(entity =>
+        {
+            entity.HasKey(e => e.IdSeguimiento);
+
+            entity.ToTable("Seguimiento");
+
+            entity.HasIndex(e => new { e.IdTutor, e.IdAlumno, e.Estado })
+                .HasDatabaseName("IX_Seguimiento_Tutor_Alumno_Estado");
+
+            entity.Property(e => e.IdSeguimiento).HasColumnName("id_seguimiento");
+            entity.Property(e => e.IdAlumno).HasColumnName("id_alumno");
+            entity.Property(e => e.IdTutor).HasColumnName("id_tutor");
+            entity.Property(e => e.Titulo)
+                .HasMaxLength(150)
+                .HasColumnName("titulo");
+            entity.Property(e => e.Descripcion)
+                .HasMaxLength(500)
+                .HasColumnName("descripcion");
+            entity.Property(e => e.Estado)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValue("ACTIVO")
+                .HasColumnName("estado");
+            entity.Property(e => e.FechaCreacion)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("fecha_creacion");
+            entity.Property(e => e.FechaActualizacion)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("fecha_actualizacion");
+
+            entity.HasOne(d => d.IdAlumnoNavigation).WithMany(p => p.Seguimientos)
+                .HasForeignKey(d => d.IdAlumno)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Seguimiento_Alumno");
+
+            entity.HasOne(d => d.IdTutorNavigation).WithMany(p => p.Seguimientos)
+                .HasForeignKey(d => d.IdTutor)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Seguimiento_Tutor");
+        });
+
         modelBuilder.Entity<SesionTutorium>(entity =>
         {
             entity.HasKey(e => e.IdSesion).HasName("PK__sesion_t__8D3F9DFEF89A577D");
 
             entity.ToTable("sesion_tutoria");
+
+            entity.HasIndex(e => e.IdSeguimiento)
+                .HasDatabaseName("IX_SesionTutoria_IdSeguimiento")
+                .HasFilter("[id_seguimiento] IS NOT NULL");
 
             entity.Property(e => e.IdSesion).HasColumnName("id_sesion");
             entity.Property(e => e.CompromisosAcuerdos)
@@ -261,6 +308,7 @@ public partial class SistemaTutoriasContext : DbContext
             entity.Property(e => e.Fecha).HasColumnName("fecha");
             entity.Property(e => e.HoraFin).HasColumnName("hora_fin");
             entity.Property(e => e.HoraIni).HasColumnName("hora_ini");
+            entity.Property(e => e.IdSeguimiento).HasColumnName("id_seguimiento");
             entity.Property(e => e.IdTutoria).HasColumnName("id_tutoria");
             entity.Property(e => e.Motivo)
                 .HasMaxLength(255)
@@ -274,6 +322,11 @@ public partial class SistemaTutoriasContext : DbContext
                 .HasForeignKey(d => d.IdTutoria)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__sesion_tu__id_tu__68487DD7");
+
+            entity.HasOne(d => d.IdSeguimientoNavigation).WithMany(p => p.SesionTutoria)
+                .HasForeignKey(d => d.IdSeguimiento)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_SesionTutoria_Seguimiento");
         });
 
         modelBuilder.Entity<Tutor>(entity =>

@@ -1,46 +1,109 @@
-import { useState } from "react";
-import axios from "axios";
-
-export const API_URL = "http://localhost:5016/api/backup";
+import { useCallback, useEffect, useState } from "react";
+import { API_URL } from "../api";
+import { useI18n } from "../i18n/I18nContext";
 
 export function useBackups() {
+    const { locale, t } = useI18n();
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
+    const [files, setFiles] = useState([]);
+    const [jobs, setJobs] = useState([]);
 
-    const fullBackup = async () => {
-        setLoading(true);
-        const res = await axios.post(`${API_URL}/full`);
-        setMessage(res.data.message);
-        setLoading(false);
+    const getAuthHeaders = useCallback((contentType = "application/json") => {
+        const token = localStorage.getItem("token");
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+        if (contentType) {
+            headers["Content-Type"] = contentType;
+        }
+
+        return headers;
+    }, []);
+
+    const request = useCallback(async (path, options = {}) => {
+        const res = await fetch(`${API_URL}/Backup${path}`, {
+            ...options,
+            headers: {
+                ...getAuthHeaders(options.contentType),
+                ...(options.headers || {})
+            }
+        });
+
+        const data = await res.json().catch(() => null);
+
+        if (!res.ok) {
+            const serverMessage = data?.detail || data?.message;
+            throw new Error(locale === "es-MX" && serverMessage ? serverMessage : t("common.requestFailed"));
+        }
+
+        return data;
+    }, [getAuthHeaders, locale, t]);
+
+    const refresh = useCallback(async () => {
+        const [filesData, jobsData] = await Promise.all([
+            request("/files"),
+            request("/jobs")
+        ]);
+
+        setFiles(filesData || []);
+        setJobs(jobsData || []);
+    }, [request]);
+
+    useEffect(() => {
+        refresh().catch((error) => setMessage(error.message));
+    }, [refresh]);
+
+    const executeAction = async (action, successMessage) => {
+        try {
+            setLoading(true);
+            setMessage("");
+            const result = await action();
+            setMessage(locale === "es-MX" && result?.message ? result.message : successMessage);
+            await refresh();
+            return { ok: true, data: result };
+        } catch (error) {
+            setMessage(error.message);
+            return { ok: false, error };
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const differentialBackup = async () => {
-        setLoading(true);
-        const res = await axios.post(`${API_URL}/differential`);
-        setMessage(res.data.message);
-        setLoading(false);
-    };
+    const fullBackup = () => executeAction(
+        () => request("/full", { method: "POST" }),
+        t("backups.fullGenerated")
+    );
 
-    const restore = async (filePath) => {
-        setLoading(true);
-        const res = await axios.post(`${API_URL}/restore`, { filePath });
-        setMessage(res.data.message ?? res.data);
-        setLoading(false);
-    };
+    const incrementalBackup = () => executeAction(
+        () => request("/incremental", { method: "POST" }),
+        t("backups.incrementalGenerated")
+    );
 
-    const schedule = async (type, time) => {
-        setLoading(true);
-        const res = await axios.post(`${API_URL}/schedule`, { type, time });
-        setMessage(res.data.message ?? res.data);
-        setLoading(false);
-    };
+    const restore = (filePath) => executeAction(
+        () => request("/restore", {
+            method: "POST",
+            body: JSON.stringify({ filePath })
+        }),
+        t("backups.restored")
+    );
+
+    const schedule = (type, scheduledAt) => executeAction(
+        () => request("/schedule", {
+            method: "POST",
+            body: JSON.stringify({ type, scheduledAt })
+        }),
+        t("backups.scheduledSuccess")
+    );
 
     return {
         loading,
         message,
+        files,
+        jobs,
         fullBackup,
-        differentialBackup,
+        incrementalBackup,
         restore,
-        schedule
+        schedule,
+        refresh
     };
 }

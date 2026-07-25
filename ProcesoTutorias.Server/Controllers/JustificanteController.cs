@@ -216,7 +216,7 @@ namespace ProcesoTutorias.Server.Controllers
             {
                 var ext = Path.GetExtension(file.FileName).ToLower();
 
-                var validos = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+                var validos = new[] { ".jpg", ".jpeg", ".png", ".webp", ".pdf" };
 
                 if (!validos.Contains(ext))
                     return BadRequest("Tipo no permitido");

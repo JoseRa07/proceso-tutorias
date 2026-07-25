@@ -1,52 +1,66 @@
-import React, { useState } from "react";
-
-import Layout from "../../componentes/layout";
-import "../../assets/estilos/Tutorias.css";
-import Alerta from "../../componentes/Alerta";
-import JustificanteModal from "./Justificante";
+import { useState } from "react";
 
 import {
     Box,
-    Typography,
+    Button,
     Card,
     CardContent,
-    Button,
-    IconButton,
-    Modal,
+    Chip,
     FormControl,
+    IconButton,
     InputLabel,
+    MenuItem,
+    Modal,
     Select,
-    MenuItem
+    Typography
 } from "@mui/material";
-
 import AddIcon from "@mui/icons-material/Add";
-import FilterListIcon from "@mui/icons-material/FilterAltRounded";
 import Arrow from "@mui/icons-material/ArrowForwardIosRounded";
+import FilterListIcon from "@mui/icons-material/FilterAltRounded";
 
+import "../../assets/estilos/Tutorias.css";
+import Alerta from "../../componentes/Alerta";
+import Layout from "../../componentes/layout";
 import { useJustificantes } from "../../hooks/useJustificantes";
+import JustificanteModal from "./Justificante";
+import { useI18n } from "../../i18n/I18nContext";
+
+const getClaseEstado = (estado) => {
+    switch (estado) {
+        case "PENDIENTE":
+            return "tutoria-pendiente";
+        case "ACEPTADO":
+            return "tutoria-completada";
+        case "RECHAZADO":
+            return "tutoria-cancelada";
+        default:
+            return "";
+    }
+};
 
 function Justificantes() {
-
-    // usuario desde local storage
+    const { formatDate, t } = useI18n();
+    const opcionesEstado = [
+        { label: t("excuses.states.all"), value: null },
+        { label: t("excuses.states.review"), value: "PENDIENTE" },
+        { label: t("excuses.states.approved"), value: "ACEPTADO" }
+    ];
     const [usuario] = useState(() => {
         const u = localStorage.getItem("usuario");
         return u ? JSON.parse(u) : null;
     });
 
-    // abrir modal de filtros
     const [openFiltro, setOpenFiltro] = useState(false);
     const [openModal, setOpenModal] = useState(false);
     const [selected, setSelected] = useState(null);
+    const [refreshKey, setRefreshKey] = useState(0);
 
-    // filtros temporales
     const [estadoTemp, setEstadoTemp] = useState(null);
     const [alumnoTemp, setAlumnoTemp] = useState("");
 
-    // filtros aplicados
     const [estado, setEstado] = useState(null);
     const [alumnoId, setAlumnoId] = useState("");
 
-    // alerta global
     const [popup, setPopup] = useState({
         open: false,
         loading: false,
@@ -55,128 +69,137 @@ function Justificantes() {
         mensaje: ""
     });
 
-    // peticion de tutorias
     const { justificantes, loading, alumnos } = useJustificantes(
         usuario,
         estado,
         alumnoId,
-        setPopup
+        setPopup,
+        refreshKey
     );
 
-    // clase segun estado de tutoria
-    const getClaseEstado = (estado) => {
-        switch (estado) {
-            case "PENDIENTE": return "tutoria-pendiente";
-            case "ACEPTADO": return "tutoria-completada";
-            default: return "";
-        }
+    const idRol = Number(usuario?.id_rol);
+
+    const abrirNuevo = () => {
+        setSelected(null);
+        setOpenModal(true);
     };
 
+    const abrirDetalle = (justificante) => {
+        setSelected(justificante);
+        setOpenModal(true);
+    };
+
+    const cerrarModal = () => {
+        setOpenModal(false);
+        setSelected(null);
+    };
+
+    const refrescar = () => {
+        setRefreshKey((prev) => prev + 1);
+    };
+
+    if (!usuario) {
+        return (
+            <Layout contentClassName="tutorias-layout-gradient">
+                <div className="tutorias-cont">
+                    <div className="tutorias-body">
+                        <Typography>{t("common.sessionMissing")}</Typography>
+                    </div>
+                </div>
+            </Layout>
+        );
+    }
+
     return (
-        <Layout>
-
-            {/* contenedor general */}
+        <Layout contentClassName="tutorias-layout-gradient">
             <div className="tutorias-cont">
-
-                {/* header principal */}
                 <div className="tutorias-head">
-                    <Typography variant="h6" fontWeight="bold">
-                        {usuario.id_rol === 2 ? "Historial de Justificantes" : "Gestión de Justificantes"}
-                    </Typography>
+                    <Box>
+                        <Typography className="tutorias-eyebrow">
+                            {idRol === 2 ? t("excuses.studentEyebrow") : t("excuses.trackingEyebrow")}
+                        </Typography>
+                        <Typography variant="h5" fontWeight={800} className="tutorias-title">
+                            {idRol === 2 ? t("excuses.historyTitle") : t("excuses.managementTitle")}
+                        </Typography>
+                        <Typography className="tutorias-desc">
+                            {idRol === 2
+                                ? t("excuses.studentDescription")
+                                : t("excuses.staffDescription")}
+                        </Typography>
+                    </Box>
 
-                    {/* boton jsutificante (solo alumno) */}
-                    {usuario.id_rol === 2 && (
+                    {idRol === 2 && (
                         <Box display="flex" alignItems="center" gap={1}>
-                            <Typography>Nuevo justificante</Typography>
-
-                            <IconButton
-                                className="btn-add"
-                                onClick={() => {
-                                    setSelected(null);
-                                    setOpenModal(true);
-                                }}
-                            >
+                            <Typography>{t("excuses.new")}</Typography>
+                            <IconButton className="btn-add" onClick={abrirNuevo} aria-label={t("excuses.new")}>
                                 <AddIcon />
                             </IconButton>
                         </Box>
                     )}
                 </div>
 
-                {/* cuerpo principal */}
                 <div className="tutorias-body">
-
-                    {/* boton de filtros */}
                     <Box className="tutorias-filtros">
-                        <Typography>Filtrar</Typography>
-                        <IconButton onClick={() => setOpenFiltro(true)}>
+                        <Typography>{t("common.filter")}</Typography>
+                        <IconButton onClick={() => setOpenFiltro(true)} aria-label={t("excuses.filterTitle")}>
                             <FilterListIcon />
                         </IconButton>
                     </Box>
 
-                    {/* lista de tutorias */}
                     <div className="tutorias-lista">
-
                         {loading ? (
-                            // loading
-                            <Box>Cargando...</Box>
+                            <Box>{t("common.loading")}</Box>
                         ) : !Array.isArray(justificantes) || justificantes.length === 0 ? (
-                            // sin datos
-                            <Box>No hay justificantes</Box>
+                            <Box>{t("excuses.empty")}</Box>
                         ) : (
                             justificantes.map((j) => (
                                 <Card key={j.idJustificante} className={`tutoria-item ${getClaseEstado(j.estado)}`}>
-
                                     <CardContent className="tutorias-c" sx={{ padding: "0px !important" }}>
-
-                                            <div className="tutoria-row">
-
-                                                {/* izquierda */}
-                                                <div className="tutoria-izq">
-                                                    <strong>{j.descripcion}</strong>
-                                                </div>
-
-                                                {/* derecha */}
-                                                <div className="tutoria-der">
-                                                    <span>{j.fecha}</span>
-                                                </div>
-
-                                                {/* accion */}
-                                                <div className="tutoria-ctrl">
-                                                <IconButton onClick={() => {
-                                                    setSelected(j);
-                                                    setOpenModal(true);
-                                                }}>
-                                                        <Arrow />
-                                                    </IconButton>
-                                                </div>
-
+                                        <div className="tutoria-row">
+                                            <div className="tutoria-izq">
+                                                <strong>{j.descripcion}</strong>
+                                                {j.nombreAlumno && (
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        {j.nombreAlumno}
+                                                    </Typography>
+                                                )}
                                             </div>
-                                        </CardContent>
-                                    </Card>
+
+                                            <div className="tutoria-der">
+                                                <span>{formatDate(j.fecha)}</span>
+                                                <Chip
+                                                    size="small"
+                                                    label={j.estado === "PENDIENTE"
+                                                        ? t("excuses.states.review")
+                                                        : t(`common.statusLabels.${j.estado}`)}
+                                                    color={j.estado === "ACEPTADO" ? "success" : "warning"}
+                                                    variant="outlined"
+                                                />
+                                            </div>
+
+                                            <div className="tutoria-ctrl">
+                                                <IconButton onClick={() => abrirDetalle(j)}>
+                                                    <Arrow />
+                                                </IconButton>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
                             ))
                         )}
-
                     </div>
                 </div>
 
-                {/* modal de filtros */}
                 <Modal open={openFiltro} onClose={() => setOpenFiltro(false)}>
                     <Box className="modal-filtro">
-
-                        {/* titulo modal */}
                         <Typography variant="h6" mb={2}>
-                            Filtrar justificantes
+                            {t("excuses.filterTitle")}
                         </Typography>
 
-                        {/* filtro estado */}
-                        <Typography mb={1}>Estado</Typography>
+                        <Typography mb={1}>{t("common.status")}</Typography>
 
                         <Box display="flex" flexWrap="wrap" gap={1} mb={2}>
-                            {[
-                                { label: "Todos", value: null },
-                                { label: "En revisión", value: "PENDIENTE" },
-                                { label: "Aceptado", value: "ACEPTADO" }
-                            ].map((op) => (
+                            {opcionesEstado.map((op) => (
                                 <Box
                                     key={op.label}
                                     onClick={() => setEstadoTemp(op.value)}
@@ -194,19 +217,18 @@ function Justificantes() {
                             ))}
                         </Box>
 
-                        {/* filtro alumno (solo tutor/admin) */}
-                        {usuario.id_rol !== 2 && (
+                        {idRol !== 2 && (
                             <>
-                                <Typography mb={1}>Alumno</Typography>
+                                <Typography mb={1}>{t("common.student")}</Typography>
 
                                 <FormControl fullWidth size="small">
-                                    <InputLabel>Seleccionar alumno</InputLabel>
+                                    <InputLabel>{t("tutoring.selectStudent")}</InputLabel>
                                     <Select
                                         value={alumnoTemp}
-                                        label="Seleccionar alumno"
+                                        label={t("tutoring.selectStudent")}
                                         onChange={(e) => setAlumnoTemp(e.target.value)}
                                     >
-                                        <MenuItem value="">Todos</MenuItem>
+                                        <MenuItem value="">{t("common.all")}</MenuItem>
 
                                         {alumnos.map((a) => (
                                             <MenuItem key={a.id_alumno} value={a.id_alumno}>
@@ -218,7 +240,6 @@ function Justificantes() {
                             </>
                         )}
 
-                        {/* aplicar filtros */}
                         <Button
                             fullWidth
                             variant="contained"
@@ -229,31 +250,29 @@ function Justificantes() {
                                 setOpenFiltro(false);
                             }}
                         >
-                            Aplicar filtros
+                            {t("common.applyFilters")}
                         </Button>
-
                     </Box>
                 </Modal>
-
             </div>
 
-            {/* alerta global */}
             <Alerta
                 open={popup.open}
                 loading={popup.loading}
                 type={popup.type}
                 titulo={popup.titulo}
                 mensaje={popup.mensaje}
-                onClose={() => setPopup(prev => ({ ...prev, open: false }))}
+                onClose={() => setPopup((prev) => ({ ...prev, open: false }))}
             />
 
             <JustificanteModal
+                key={selected?.idJustificante || "nuevo"}
                 open={openModal}
-                onClose={() => setOpenModal(false)}
+                onClose={cerrarModal}
+                onSaved={refrescar}
                 usuario={usuario}
                 data={selected}
             />
-
         </Layout>
     );
 }

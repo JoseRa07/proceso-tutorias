@@ -1,0 +1,42 @@
+export const authDictionary = {
+    "es-MX": {
+        welcomeHome: "Bienvenido al Sistema de Tutorías",
+        signIn: "Iniciar sesión",
+        welcome: "BIENVENIDO",
+        signInPrompt: "Ingresa con tu cuenta institucional",
+        email: "Correo electrónico",
+        password: "Contraseña",
+        passwordPlaceholder: "Ingresa tu contraseña",
+        institutionalEmailOnly: "Solo se permiten correos institucionales (@utnay.edu.mx).",
+        invalidCredentials: "El correo o la contraseña no son correctos.",
+        connectionError: "No fue posible conectar con el servidor.",
+        forgotPassword: "¿Olvidaste tu contraseña?",
+        recoverPassword: "Recuperar contraseña",
+        changePassword: "Cambiar contraseña",
+        newPassword: "Nueva contraseña",
+        confirmPassword: "Confirmar contraseña",
+        confirm: "Confirmar",
+        changeRequiredTitle: "Debes actualizar tu contraseña",
+        changeRequiredMessage: "Crea una contraseña nueva para continuar."
+    },
+    "en-US": {
+        welcomeHome: "Welcome to the Tutoring System",
+        signIn: "Sign in",
+        welcome: "WELCOME",
+        signInPrompt: "Sign in with your university account",
+        email: "Email address",
+        password: "Password",
+        passwordPlaceholder: "Enter your password",
+        institutionalEmailOnly: "Use your university email address (@utnay.edu.mx).",
+        invalidCredentials: "The email or password is incorrect.",
+        connectionError: "Could not connect to the server.",
+        forgotPassword: "Forgot your password?",
+        recoverPassword: "Recover password",
+        changePassword: "Change password",
+        newPassword: "New password",
+        confirmPassword: "Confirm password",
+        confirm: "Confirm",
+        changeRequiredTitle: "Password update required",
+        changeRequiredMessage: "Create a new password to continue."
+    }
+};

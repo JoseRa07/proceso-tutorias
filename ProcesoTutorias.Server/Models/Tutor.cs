@@ -13,5 +13,7 @@ public partial class Tutor
 
     public virtual Maestro IdMaestroNavigation { get; set; } = null!;
 
+    public virtual ICollection<Seguimiento> Seguimientos { get; set; } = new List<Seguimiento>();
+
     public virtual ICollection<Tutorium> Tutoria { get; set; } = new List<Tutorium>();
 }

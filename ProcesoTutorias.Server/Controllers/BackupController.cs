@@ -1,109 +1,97 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using ProcesoTutorias.Server.Models;
 using ProcesoTutorias.Server.Services;
 
-namespace ProcesoTutorias.Server.Controllers
+namespace ProcesoTutorias.Server.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+[Authorize(Roles = "ADMIN")]
+public class BackupController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class BackupController : ControllerBase
+    private readonly LogicalBackupService _backupService;
+
+    public BackupController(LogicalBackupService backupService)
     {
-        private readonly IConfiguration _config;
+        _backupService = backupService;
+    }
 
-        public BackupController(IConfiguration config)
+    [HttpPost("full")]
+    public async Task<ActionResult<BackupResult>> FullBackup(CancellationToken cancellationToken)
+    {
+        var result = await _backupService.CreateBackupAsync("COMPLETO", cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("incremental")]
+    public async Task<ActionResult<BackupResult>> IncrementalBackup(CancellationToken cancellationToken)
+    {
+        var result = await _backupService.CreateBackupAsync("INCREMENTAL", cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("differential")]
+    public async Task<ActionResult<BackupResult>> DifferentialBackup(CancellationToken cancellationToken)
+    {
+        var result = await _backupService.CreateBackupAsync("INCREMENTAL", cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("restore")]
+    public async Task<ActionResult<RestoreResult>> Restore([FromBody] RestoreRequest req, CancellationToken cancellationToken)
+    {
+        try
         {
-            _config = config;
+            var result = await _backupService.RestoreBackupAsync(req.FilePath, cancellationToken);
+            return Ok(result);
         }
-
-        [HttpPost("full")]
-        public IActionResult FullBackup()
+        catch (Exception ex)
         {
-            return ExecuteBackup("FULL");
-        }
-
-        [HttpPost("differential")]
-        public IActionResult DifferentialBackup()
-        {
-            return ExecuteBackup("DIFFERENTIAL");
-        }
-
-        [HttpPost("restore")]
-        public IActionResult Restore([FromBody] RestoreRequest req)
-        {
-            string safePath = req.FilePath.Replace("\"", "");
-
-            string sql = $@"
-            USE master;
-
-            ALTER DATABASE SistemaTutorias SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-
-            RESTORE DATABASE SistemaTutorias
-            FROM DISK = '{safePath}'
-            WITH REPLACE, RECOVERY;
-
-            ALTER DATABASE SistemaTutorias SET MULTI_USER;
-            ";
-
-            using var conn = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
-            conn.Open();
-
-            using var cmd = new SqlCommand(sql, conn);
-            cmd.ExecuteNonQuery();
-
-            return Ok("Restauración completa");
-        }
-
-        [HttpPost("schedule")]
-        public IActionResult ScheduleBackup([FromBody] ScheduleRequest req)
-        {
-            BackupScheduler.Register(req.Type, TimeSpan.Parse(req.Time));
-            return Ok(new { message = "Respaldo programado" });
-        }
-
-        private IActionResult ExecuteBackup(string type)
-        {
-            string dbName = "SistemaTutorias";
-
-            string folder = "C:\\Respaldos";
-
-            if (!Directory.Exists(folder))
+            return BadRequest(new
             {
-                Directory.CreateDirectory(folder);
-            }
-
-            string file = Path.Combine(
-                folder,
-                $"{dbName}_{type}_{DateTime.Now:yyyyMMdd_HHmmss}.bak"
-            );
-
-            string sql = type == "FULL"
-                ? $@"BACKUP DATABASE [{dbName}] TO DISK = '{file}' WITH INIT;"
-                : $@"BACKUP DATABASE [{dbName}] TO DISK = '{file}' WITH DIFFERENTIAL;";
-
-            using var conn = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
-            conn.Open();
-
-            using var cmd = new SqlCommand(sql, conn);
-            cmd.ExecuteNonQuery();
-
-            return Ok(new { message = "Backup generado correctamente", file });
-        }
-
-        [HttpGet("jobs")]
-        public IActionResult GetJobs()
-        {
-            return Ok(BackupScheduler.GetJobs());
+                message = "[BACKUP_RESTAURACION_ERROR] No se pudo restaurar el respaldo lógico.",
+                detail = ex.Message
+            });
         }
     }
 
-    public class RestoreRequest
+    [HttpPost("schedule")]
+    public ActionResult ScheduleBackup([FromBody] ScheduleRequest req)
     {
-        public string FilePath { get; set; }
+        if (req == null)
+            return BadRequest(new { message = "[BACKUP_PROGRAMACION_REQUERIDA] Indica la fecha, hora y tipo de respaldo." });
+
+        if (!DateTime.TryParse(req.ScheduledAt, out DateTime scheduledAt))
+            return BadRequest(new { message = "[BACKUP_FECHA_INVALIDA] La fecha y hora programada no es válida." });
+
+        if (scheduledAt <= DateTime.Now)
+            return BadRequest(new { message = "[BACKUP_FECHA_PASADA] La programación debe ser posterior a la hora actual." });
+
+        var job = BackupScheduler.Register(req.Type, scheduledAt);
+        return Ok(new { message = "Respaldo programado correctamente.", job });
     }
 
-    public class ScheduleRequest
+    [HttpGet("jobs")]
+    public ActionResult<IEnumerable<BackupJob>> GetJobs()
     {
-        public string Type { get; set; }
-        public string Time { get; set; }
+        return Ok(BackupScheduler.GetJobs());
     }
+
+    [HttpGet("files")]
+    public ActionResult<IEnumerable<BackupFileInfo>> GetFiles()
+    {
+        return Ok(_backupService.ListBackups());
+    }
+}
+
+public class RestoreRequest
+{
+    public string FilePath { get; set; } = "";
+}
+
+public class ScheduleRequest
+{
+    public string Type { get; set; } = "";
+    public string ScheduledAt { get; set; } = "";
 }

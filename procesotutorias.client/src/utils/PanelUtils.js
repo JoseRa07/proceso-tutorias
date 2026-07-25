@@ -1,10 +1,9 @@
-// HELPER PARA LA VISTA DE PANEL
+ï»¿// Helper para la vista de panel.
 
-// SALUDO DE BIENVENIDA BASADO EN LA HORA
-export const saludo = () => {
+export const saludo = (t) => {
     const hora = new Date().getHours();
 
-    if (hora >= 6 && hora < 12) return "Buenos días";
-    if (hora >= 12 && hora < 19) return "Buenas tardes";
-    return "Buenas noches";
+    if (hora >= 6 && hora < 12) return t("panel.greeting.morning");
+    if (hora >= 12 && hora < 19) return t("panel.greeting.afternoon");
+    return t("panel.greeting.evening");
 };
