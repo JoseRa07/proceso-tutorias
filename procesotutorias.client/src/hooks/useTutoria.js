@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { API_URL } from "../api";
 import { useI18n } from "../i18n/I18nContext";
+import { sanitizeMultiline, sanitizeSingleLine } from "../utils/validation";
 
 const formInicial = {
     alumnoId: "",
@@ -157,8 +158,8 @@ export const useTutoria = (
                 idSeguimiento: form.seguimientoId && form.seguimientoId !== "__nuevo__"
                     ? Number(form.seguimientoId)
                     : null,
-                titulo: form.seguimientoTitulo,
-                descripcion: form.seguimientoDescripcion,
+                titulo: sanitizeSingleLine(form.seguimientoTitulo),
+                descripcion: sanitizeMultiline(form.seguimientoDescripcion),
                 quitar: false
             }
             : { quitar: true };
@@ -192,8 +193,8 @@ export const useTutoria = (
                     horaIni: form.horaIni,
                     horaFin: form.horaFin,
                     motivo: form.motivo.join(","),
-                    pts: form.pts,
-                    acuerdos: form.acuerdos
+                    pts: sanitizeMultiline(form.pts),
+                    acuerdos: sanitizeMultiline(form.acuerdos)
                 })
             });
 

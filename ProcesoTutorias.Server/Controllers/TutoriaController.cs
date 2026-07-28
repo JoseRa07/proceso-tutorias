@@ -2,19 +2,39 @@
 using Microsoft.AspNetCore.Authorization;
 using ProcesoTutorias.Server.Models;
 using ProcesoTutorias.Server.DTOs;
+using System.Security.Claims;
+using ProcesoTutorias.Server.Validation;
+using ProcesoTutorias.Server.Services;
 
 namespace ProcesoTutorias.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    [Authorize(Roles = "ALUMNO,TUTOR")]
     public class TutoriaController : ControllerBase
     {
-        private readonly SistemaTutoriasContext _context;
+        private static readonly HashSet<string> MotivosPermitidos =
+            new(StringComparer.Ordinal)
+            {
+                "REPROBACION",
+                "AUSENTISMO",
+                "PROBLEMAS_ECONOMICOS",
+                "INDISCIPLINA",
+                "PROBLEMAS_PERSONALES",
+                "IMPUNTUALIDAD",
+                "FALTA_COMPROMISO",
+                "FALTA_ATENCION"
+            };
 
-        public TutoriaController(SistemaTutoriasContext context)
+        private readonly SistemaTutoriasContext _context;
+        private readonly AuditLogService _auditLogService;
+
+        public TutoriaController(
+            SistemaTutoriasContext context,
+            AuditLogService auditLogService)
         {
             _context = context;
+            _auditLogService = auditLogService;
         }
 
         [HttpGet]
@@ -26,6 +46,14 @@ namespace ProcesoTutorias.Server.Controllers
             int pagina = 1,
             int tam = 5)
         {
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out idUsuario))
+                return Unauthorized();
+            if (pagina < 1 || tam is < 1 or > 100)
+                return BadRequest(new { message = "[PAGINACION_INVALIDA] La página y el tamaño deben ser enteros positivos; el tamaño máximo es 100." });
+            if (idAlumno.HasValue && !InputSanitizer.IsPositiveId(idAlumno.Value))
+                return BadRequest(new { message = "[ALUMNO_INVALIDO] El alumno debe ser un entero mayor que cero." });
+
+            idRol = User.IsInRole("ALUMNO") ? 2 : 3;
             IQueryable<SesionTutoriaDto> query;
 
             if (idRol == 2)
@@ -93,6 +121,9 @@ namespace ProcesoTutorias.Server.Controllers
         [HttpGet("detalle")]
         public IActionResult ObtenerDetalle(int idSesion)
         {
+            if (!InputSanitizer.IsPositiveId(idSesion))
+                return BadRequest(new { message = "[TUTORIA_ID_INVALIDO] El identificador debe ser un entero mayor que cero." });
+
             var data = (from s in _context.SesionTutoria
                         join t in _context.Tutoria on s.IdTutoria equals t.IdTutoria
                         join a in _context.Alumnos on t.IdAlumno equals a.IdAlumno
@@ -124,8 +155,12 @@ namespace ProcesoTutorias.Server.Controllers
         }
 
         [HttpGet("alumnos")]
+        [Authorize(Roles = "TUTOR")]
         public IActionResult ObtenerTutorados(int idUsuario)
         {
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out idUsuario))
+                return Unauthorized();
+
             var alumnos = from m in _context.Maestros
                           join t in _context.Tutors on m.IdMaestro equals t.IdMaestro
                           join g in _context.Grupos on t.IdTutor equals g.IdTutor
@@ -142,12 +177,19 @@ namespace ProcesoTutorias.Server.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "TUTOR")]
         public IActionResult CrearTutoria(int idUsuario, [FromBody] SesionTutoriaDto? dto)
         {
             try
             {
+                if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out idUsuario))
+                    return Unauthorized();
+
                 if (dto == null)
                     return BadRequest("DTO vacío");
+                string? validationError = ValidarSesion(dto);
+                if (validationError != null)
+                    return BadRequest(new { message = validationError });
 
                 Tutor? tutor = _context.Tutors
                     .First(t => t.IdMaestroNavigation.IdUsuario == idUsuario);
@@ -165,11 +207,11 @@ namespace ProcesoTutorias.Server.Controllers
                 {
                     IdTutoria = tutoria.IdTutoria,
                     Fecha = dto.Fecha,
-                    HoraIni = TimeOnly.Parse(dto.HoraIni),
-                    HoraFin = TimeOnly.Parse(dto.HoraFin),
-                    Motivo = dto.Motivo,
-                    PtsRelevantes = dto.Pts,
-                    CompromisosAcuerdos = dto.Acuerdos,
+                    HoraIni = TimeOnly.ParseExact(dto.HoraIni, "HH:mm"),
+                    HoraFin = TimeOnly.ParseExact(dto.HoraFin, "HH:mm"),
+                    Motivo = InputSanitizer.NormalizeSingleLine(dto.Motivo),
+                    PtsRelevantes = InputSanitizer.NormalizeMultiline(dto.Pts),
+                    CompromisosAcuerdos = InputSanitizer.NormalizeMultiline(dto.Acuerdos),
                     Estado = "PENDIENTE"
                 };
 
@@ -189,10 +231,16 @@ namespace ProcesoTutorias.Server.Controllers
         }
 
         [HttpPut("{idSesion}")]
+        [Authorize(Roles = "TUTOR")]
         public IActionResult EditarTutoria(int idSesion, [FromBody] SesionTutoriaDto? dto)
         {
+            if (!InputSanitizer.IsPositiveId(idSesion))
+                return BadRequest(new { message = "[TUTORIA_ID_INVALIDO] El identificador debe ser un entero mayor que cero." });
             if (dto == null)
                 return BadRequest("DTO vacío");
+            string? validationError = ValidarSesion(dto);
+            if (validationError != null)
+                return BadRequest(new { message = validationError });
 
             var sesion = _context.SesionTutoria.FirstOrDefault(x => x.IdSesion == idSesion);
 
@@ -200,11 +248,11 @@ namespace ProcesoTutorias.Server.Controllers
                 return NotFound();
 
             sesion.Fecha = dto.Fecha;
-            sesion.HoraIni = TimeOnly.Parse(dto.HoraIni);
-            sesion.HoraFin = TimeOnly.Parse(dto.HoraFin);
-            sesion.Motivo = dto.Motivo;
-            sesion.PtsRelevantes = dto.Pts;
-            sesion.CompromisosAcuerdos = dto.Acuerdos;
+            sesion.HoraIni = TimeOnly.ParseExact(dto.HoraIni, "HH:mm");
+            sesion.HoraFin = TimeOnly.ParseExact(dto.HoraFin, "HH:mm");
+            sesion.Motivo = InputSanitizer.NormalizeSingleLine(dto.Motivo);
+            sesion.PtsRelevantes = InputSanitizer.NormalizeMultiline(dto.Pts);
+            sesion.CompromisosAcuerdos = InputSanitizer.NormalizeMultiline(dto.Acuerdos);
 
             sesion.Estado = "PENDIENTE";
 
@@ -214,11 +262,23 @@ namespace ProcesoTutorias.Server.Controllers
         }
 
         [HttpPut("eliminar/{idSesion}")]
+        [Authorize(Roles = "TUTOR")]
         public IActionResult EliminarTutoria(int idSesion)
         {
-            var sesion = _context.SesionTutoria.First(x => x.IdSesion == idSesion);
+            if (!InputSanitizer.IsPositiveId(idSesion))
+                return BadRequest(new { message = "[TUTORIA_ID_INVALIDO] El identificador debe ser un entero mayor que cero." });
 
+            var sesion = _context.SesionTutoria.FirstOrDefault(x => x.IdSesion == idSesion);
+            if (sesion == null)
+                return NotFound();
+
+            string previousState = sesion.Estado;
             sesion.Estado = "INACTIVO";
+            _auditLogService.Record(
+                "TUTORIA_ELIMINADA",
+                "SesionTutoria",
+                idSesion,
+                $"Estado cambiado de {previousState} a INACTIVO.");
 
             _context.SaveChanges();
 
@@ -226,11 +286,23 @@ namespace ProcesoTutorias.Server.Controllers
         }
 
         [HttpPut("aceptar/{idSesion}")]
+        [Authorize(Roles = "ALUMNO")]
         public IActionResult AceptarTutoria(int idSesion)
         {
-            var sesion = _context.SesionTutoria.First(x => x.IdSesion == idSesion);
+            if (!InputSanitizer.IsPositiveId(idSesion))
+                return BadRequest(new { message = "[TUTORIA_ID_INVALIDO] El identificador debe ser un entero mayor que cero." });
 
+            var sesion = _context.SesionTutoria.FirstOrDefault(x => x.IdSesion == idSesion);
+            if (sesion == null)
+                return NotFound();
+
+            string previousState = sesion.Estado;
             sesion.Estado = "COMPLETADA";
+            _auditLogService.Record(
+                "TUTORIA_ACEPTADA",
+                "SesionTutoria",
+                idSesion,
+                $"Estado cambiado de {previousState} a COMPLETADA.");
 
             _context.SaveChanges();
 
@@ -238,15 +310,47 @@ namespace ProcesoTutorias.Server.Controllers
         }
 
         [HttpPut("solicitar-edicion/{idSesion}")]
+        [Authorize(Roles = "ALUMNO")]
         public IActionResult SolicitarEdicion(int idSesion)
         {
-            var sesion = _context.SesionTutoria.First(x => x.IdSesion == idSesion);
+            if (!InputSanitizer.IsPositiveId(idSesion))
+                return BadRequest(new { message = "[TUTORIA_ID_INVALIDO] El identificador debe ser un entero mayor que cero." });
+
+            var sesion = _context.SesionTutoria.FirstOrDefault(x => x.IdSesion == idSesion);
+            if (sesion == null)
+                return NotFound();
 
             sesion.Estado = "EDICION";
 
             _context.SaveChanges();
 
             return Ok(new { message = "Tutoría en edición" });
+        }
+
+        private static string? ValidarSesion(SesionTutoriaDto dto)
+        {
+            if (!InputSanitizer.IsPositiveId(dto.IdAlumno))
+                return "[TUTORIA_ALUMNO_INVALIDO] Selecciona un alumno válido.";
+            if (dto.Fecha == default)
+                return "[TUTORIA_FECHA_INVALIDA] Selecciona una fecha válida.";
+            if (!InputSanitizer.TryParseTime(dto.HoraIni, out TimeOnly horaInicio) ||
+                !InputSanitizer.TryParseTime(dto.HoraFin, out TimeOnly horaFin))
+            {
+                return "[TUTORIA_HORA_INVALIDA] Las horas deben tener el formato HH:mm.";
+            }
+            if (horaFin <= horaInicio)
+                return "[TUTORIA_RANGO_HORA_INVALIDO] La hora de salida debe ser posterior a la hora de inicio.";
+
+            string[] motivos = (dto.Motivo ?? string.Empty)
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (motivos.Length == 0 || motivos.Any(motivo => !MotivosPermitidos.Contains(motivo)))
+                return "[TUTORIA_MOTIVO_INVALIDO] Selecciona al menos un motivo válido.";
+
+            string? pointsError = InputSanitizer.ValidateFreeText(dto.Pts, "Los puntos relevantes", 2000);
+            if (pointsError != null)
+                return pointsError;
+
+            return InputSanitizer.ValidateFreeText(dto.Acuerdos, "Los compromisos y acuerdos", 2000);
         }
     }
 }

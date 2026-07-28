@@ -10,6 +10,7 @@
         public int TotalTutorias { get; set; }
         public int TutoriasPendientes { get; set; }
         public int TutoriasCompletadas { get; set; }
+        public int TutoriasEnEdicion { get; set; }
         public int TotalGrupos { get; set; }
         public List<string> Recomendaciones { get; set; } = new();
     }

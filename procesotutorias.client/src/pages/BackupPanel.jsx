@@ -17,6 +17,10 @@ import {
 import BackupRoundedIcon from "@mui/icons-material/BackupRounded";
 import RestoreRoundedIcon from "@mui/icons-material/RestoreRounded";
 import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
+import {
+    validateBackupPath,
+    validateFutureDateTime
+} from "../utils/validation";
 import StorageRoundedIcon from "@mui/icons-material/StorageRounded";
 import UpdateRoundedIcon from "@mui/icons-material/UpdateRounded";
 
@@ -72,6 +76,7 @@ export default function BackupPanel() {
     const [manualFile, setManualFile] = useState("");
     const [scheduledType, setScheduledType] = useState("INCREMENTAL");
     const [scheduledAt, setScheduledAt] = useState(getLocalInputDateTime());
+    const [fieldErrors, setFieldErrors] = useState({});
     const [popup, setPopup] = useState({
         open: false,
         loading: false,
@@ -112,7 +117,9 @@ export default function BackupPanel() {
     };
 
     const handleRestore = () => {
-        if (!restorePath) {
+        const pathError = validateBackupPath(restorePath, t);
+        setFieldErrors((current) => ({ ...current, manualFile: pathError }));
+        if (pathError) {
             setPopup({
                 open: true,
                 loading: false,
@@ -127,7 +134,9 @@ export default function BackupPanel() {
     };
 
     const handleSchedule = () => {
-        if (!scheduledAt) {
+        const dateError = validateFutureDateTime(scheduledAt, t);
+        setFieldErrors((current) => ({ ...current, scheduledAt: dateError }));
+        if (dateError) {
             setPopup({
                 open: true,
                 loading: false,
@@ -252,9 +261,14 @@ export default function BackupPanel() {
                                     label={t("backups.dateTime")}
                                     type="datetime-local"
                                     value={scheduledAt}
-                                    onChange={(e) => setScheduledAt(e.target.value)}
+                                    onChange={(e) => {
+                                        setScheduledAt(e.target.value);
+                                        setFieldErrors((current) => ({ ...current, scheduledAt: "" }));
+                                    }}
                                     fullWidth
                                     required
+                                    error={!!fieldErrors.scheduledAt}
+                                    helperText={fieldErrors.scheduledAt}
                                     InputLabelProps={{ shrink: true }}
                                     inputProps={{ step: 1, "aria-invalid": !scheduledAt }}
                                 />
@@ -284,7 +298,11 @@ export default function BackupPanel() {
                                     <Select
                                         value={selectedFile}
                                         label={t("backups.availableFile")}
-                                        onChange={(e) => setSelectedFile(e.target.value)}
+                                        onChange={(e) => {
+                                            setSelectedFile(e.target.value);
+                                            setManualFile("");
+                                            setFieldErrors((current) => ({ ...current, manualFile: "" }));
+                                        }}
                                     >
                                         <MenuItem value="">{t("backups.selectBackup")}</MenuItem>
                                         {files.map((file) => (
@@ -299,8 +317,15 @@ export default function BackupPanel() {
                                     label={t("backups.manualPath")}
                                     placeholder="C:\\Respaldos\\SistemaTutorias_COMPLETO_20260719_120000.json"
                                     value={manualFile}
-                                    onChange={(e) => setManualFile(e.target.value)}
+                                    onChange={(e) => {
+                                        setManualFile(e.target.value);
+                                        setSelectedFile("");
+                                        setFieldErrors((current) => ({ ...current, manualFile: "" }));
+                                    }}
                                     fullWidth
+                                    error={!!fieldErrors.manualFile}
+                                    helperText={fieldErrors.manualFile}
+                                    inputProps={{ maxLength: 260, "aria-invalid": !!fieldErrors.manualFile }}
                                 />
 
                                 <Button color="warning" variant="contained" disabled={loading} onClick={handleRestore}>
@@ -328,7 +353,11 @@ export default function BackupPanel() {
                                                 {formatDate(file.createdAt)} · {formatSize(file.sizeBytes)}
                                             </Typography>
                                         </Box>
-                                        <Button size="small" onClick={() => setSelectedFile(file.file)}>
+                                        <Button size="small" onClick={() => {
+                                            setSelectedFile(file.file);
+                                            setManualFile("");
+                                            setFieldErrors((current) => ({ ...current, manualFile: "" }));
+                                        }}>
                                             {t("backups.use")}
                                         </Button>
                                     </Box>

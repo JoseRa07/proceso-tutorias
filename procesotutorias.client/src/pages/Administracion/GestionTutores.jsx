@@ -25,6 +25,13 @@ import Alerta from "../../componentes/Alerta";
 import { useAdminCatalogos, useAdminTutores } from "../../hooks/useAdministracion";
 import "../../assets/estilos/Administracion.css";
 import { useI18n } from "../../i18n/I18nContext";
+import {
+    sanitizeSingleLine,
+    validateDate,
+    validateFreeText,
+    validateIdentifier,
+    validatePositiveInteger
+} from "../../utils/validation";
 
 const hoy = new Date().toISOString().split("T")[0];
 
@@ -67,10 +74,14 @@ function GestionTutores() {
     };
 
     const validar = () => {
-        const errores = {};
-        if (!form.idMaestro && !form.idUsuario) errores.idUsuario = t("administration.tutors.userRequired");
-        if (!form.codEmpleado.trim()) errores.codEmpleado = t("administration.tutors.codeRequired");
-        if (!form.vigencia) errores.vigencia = t("administration.tutors.dateRequired");
+        const errores = {
+            idUsuario: !form.idMaestro ? validatePositiveInteger(form.idUsuario, t) : "",
+            codEmpleado: validateIdentifier(form.codEmpleado, t, { maxLength: 30 }),
+            vigencia: validateDate(form.vigencia, t, { min: hoy })
+        };
+        Object.keys(errores).forEach((campo) => {
+            if (!errores[campo]) delete errores[campo];
+        });
         setFieldErrors(errores);
         return Object.keys(errores).length === 0;
     };
@@ -83,14 +94,17 @@ function GestionTutores() {
             if (form.idMaestro) {
                 await requestAdmin(`/Tutores/${form.idMaestro}`, {
                     method: "PUT",
-                    body: JSON.stringify({ codEmpleado: form.codEmpleado, vigencia: form.vigencia })
+                    body: JSON.stringify({
+                        codEmpleado: sanitizeSingleLine(form.codEmpleado),
+                        vigencia: form.vigencia
+                    })
                 });
             } else {
                 await requestAdmin("/Tutores", {
                     method: "POST",
                     body: JSON.stringify({
                         idUsuario: Number(form.idUsuario),
-                        codEmpleado: form.codEmpleado,
+                        codEmpleado: sanitizeSingleLine(form.codEmpleado),
                         vigencia: form.vigencia,
                         activarComoTutor: form.activarComoTutor
                     })
@@ -138,7 +152,10 @@ function GestionTutores() {
 
     const buscar = async (event) => {
         event.preventDefault();
-        await cargarTutores(filtro);
+        const filterError = validateFreeText(filtro, t, { required: false, maxLength: 100 });
+        setFieldErrors((current) => ({ ...current, filtro: filterError }));
+        if (filterError) return;
+        await cargarTutores(sanitizeSingleLine(filtro));
     };
 
     return (
@@ -166,8 +183,8 @@ function GestionTutores() {
                                     {fieldErrors.idUsuario && <Typography color="error" fontSize={12} mt={0.5}>{fieldErrors.idUsuario}</Typography>}
                                 </FormControl>
                             )}
-                            <TextField label={t("administration.tutors.employeeCode")} value={form.codEmpleado} onChange={(e) => actualizarForm("codEmpleado", e.target.value)} required error={!!fieldErrors.codEmpleado} helperText={fieldErrors.codEmpleado} />
-                            <TextField label={t("administration.tutors.validUntil")} type="date" value={form.vigencia} onChange={(e) => actualizarForm("vigencia", e.target.value)} required error={!!fieldErrors.vigencia} helperText={fieldErrors.vigencia} InputLabelProps={{ shrink: true }} />
+                            <TextField label={t("administration.tutors.employeeCode")} value={form.codEmpleado} onChange={(e) => actualizarForm("codEmpleado", e.target.value)} required error={!!fieldErrors.codEmpleado} helperText={fieldErrors.codEmpleado} inputProps={{ maxLength: 30, "aria-invalid": !!fieldErrors.codEmpleado }} />
+                            <TextField label={t("administration.tutors.validUntil")} type="date" value={form.vigencia} onChange={(e) => actualizarForm("vigencia", e.target.value)} required error={!!fieldErrors.vigencia} helperText={fieldErrors.vigencia} InputLabelProps={{ shrink: true }} inputProps={{ min: hoy, "aria-invalid": !!fieldErrors.vigencia }} />
                             {!form.idMaestro && (
                                 <FormControlLabel
                                     control={<Checkbox checked={form.activarComoTutor} onChange={(e) => actualizarForm("activarComoTutor", e.target.checked)} />}
@@ -181,7 +198,7 @@ function GestionTutores() {
                     <div className="admin-panel">
                         {error && <Box className="admin-empty">{error}</Box>}
                         <Box component="form" className="admin-actions" onSubmit={buscar} mb={1}>
-                            <TextField size="small" label={t("common.search")} value={filtro} onChange={(e) => setFiltro(e.target.value)} />
+                            <TextField size="small" label={t("common.search")} value={filtro} onChange={(e) => { setFiltro(e.target.value); setFieldErrors((current) => ({ ...current, filtro: "" })); }} error={!!fieldErrors.filtro} helperText={fieldErrors.filtro} inputProps={{ maxLength: 100, "aria-invalid": !!fieldErrors.filtro }} />
                             <Button type="submit">{t("administration.filter")}</Button>
                         </Box>
 

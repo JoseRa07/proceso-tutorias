@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
 import "../assets/estilos/layout.css";
@@ -9,13 +9,20 @@ import DropUpIcon from "@mui/icons-material/ArrowDropUp";
 import DropDownIcon from "@mui/icons-material/ArrowDropDown";
 import LanguageIcon from "@mui/icons-material/Language";
 import { useI18n } from "../i18n/I18nContext";
+import { useAuthSession } from "../auth/session";
+import { logout } from "../auth/authFetch";
+import CambiarContra from "./Auth/CambiarContra";
+import Alerta from "./Alerta";
 
 function Layout({ children, variant = "default", contentClassName = "" }) {
     const [menuOpen, setMenuOpen] = useState(false);
     const [openSubmenu, setOpenSubmenu] = useState(null);
+    const [showCambiarPass, setShowCambiarPass] = useState(false);
+    const [showPasswordNotice, setShowPasswordNotice] = useState(false);
     const navigate = useNavigate();
     const { locale, setLocale, supportedLocales, t } = useI18n();
-    const usuario = JSON.parse(localStorage.getItem("usuario"));
+    const session = useAuthSession();
+    const usuario = session?.user;
     const isAuthenticated = !!usuario;
     const rol = usuario?.id_rol;
 
@@ -23,17 +30,40 @@ function Layout({ children, variant = "default", contentClassName = "" }) {
     const esAlumno = rol === 2;
     const esTutor = rol === 3;
 
+    useEffect(() => {
+        if (!usuario?.req_cambio_contra) return;
+
+        const noticeTimer = window.setTimeout(() => {
+            setShowPasswordNotice(true);
+        }, 0);
+        const modalTimer = window.setTimeout(() => {
+            setShowPasswordNotice(false);
+            setShowCambiarPass(true);
+        }, 5000);
+
+        return () => {
+            window.clearTimeout(noticeTimer);
+            window.clearTimeout(modalTimer);
+        };
+    }, [usuario?.req_cambio_contra]);
+
     const cerrarMenu = () => setMenuOpen(false);
 
     const toggleSubmenu = (menu) => {
         setOpenSubmenu(openSubmenu === menu ? null : menu);
     };
 
-    const cerrarSesion = () => {
-        localStorage.removeItem("usuario");
-        localStorage.removeItem("token");
+    const cerrarSesion = async () => {
         cerrarMenu();
+        await logout();
         navigate("/");
+    };
+
+    const abrirCambioContrasena = () => {
+        setOpenSubmenu(null);
+        setShowPasswordNotice(false);
+        setShowCambiarPass(true);
+        cerrarMenu();
     };
 
     const cambiarIdioma = (nextLocale) => {
@@ -120,7 +150,20 @@ function Layout({ children, variant = "default", contentClassName = "" }) {
 
                                     <ul className="submenu" id="submenu-perfil">
                                         <li>
-                                            <button className="CerrarSesion-btn" onClick={cerrarSesion}>
+                                            <button
+                                                type="button"
+                                                className="CerrarSesion-btn"
+                                                onClick={abrirCambioContrasena}
+                                            >
+                                                {t("auth.changePassword")}
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button
+                                                type="button"
+                                                className="CerrarSesion-btn"
+                                                onClick={cerrarSesion}
+                                            >
                                                 {t("navigation.signOut")}
                                             </button>
                                         </li>
@@ -205,6 +248,24 @@ function Layout({ children, variant = "default", contentClassName = "" }) {
                     <p>{t("navigation.footer.rights")}</p>
                 </div>
             </footer>
+
+            <CambiarContra
+                isOpen={showCambiarPass}
+                obligatorio={Boolean(usuario?.req_cambio_contra)}
+                onClose={() => setShowCambiarPass(false)}
+            />
+
+            <Alerta
+                open={showPasswordNotice}
+                loading={false}
+                type="info"
+                titulo={t("auth.changeRequiredTitle")}
+                mensaje={t("auth.changeRequiredMessage")}
+                onClose={() => {
+                    setShowPasswordNotice(false);
+                    setShowCambiarPass(true);
+                }}
+            />
         </>
     );
 }

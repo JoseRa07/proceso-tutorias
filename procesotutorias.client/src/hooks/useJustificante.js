@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { API_URL, URL_B } from "../api";
+import { API_URL } from "../api";
 import { useI18n } from "../i18n/I18nContext";
 
 export const useJustificante = (onSuccess) => {
@@ -125,5 +125,5 @@ export const useJustificante = (onSuccess) => {
         return await res.json();
     };
 
-    return { crear, editar, eliminar, aceptar, subirArchivo, loading, BASE_URL: URL_B };
+    return { crear, editar, eliminar, aceptar, subirArchivo, loading };
 };

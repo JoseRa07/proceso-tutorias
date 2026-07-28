@@ -68,6 +68,20 @@
         border-radius: 5px;
     }
 
+    .formulario input.input-error {
+        border-color: #d32f2f;
+        margin-bottom: 4px;
+    }
+
+    .formulario .field-error {
+        display: block;
+        margin: 0 0 12px;
+        color: #d32f2f;
+        font-size: 12px;
+        font-weight: 600;
+        text-align: left;
+    }
+
         .formulario input:hover,
         .formulario input:focus {
             border-color: #22d47b;

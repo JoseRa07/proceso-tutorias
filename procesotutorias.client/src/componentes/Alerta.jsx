@@ -45,7 +45,7 @@ function Alerta({
                             position: "fixed",
                             inset: 0,
                             backgroundColor: "#000",
-                            zIndex: 1000
+                            zIndex: 1500
                         }}
                         onClick={onClose}
                     />
@@ -60,7 +60,7 @@ function Alerta({
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            zIndex: 1001,
+                            zIndex: 1501,
                             padding: "16px"
                         }}
                     >

@@ -29,6 +29,12 @@ import Aceptar from "@mui/icons-material/DownloadDoneRounded";
 import Edicion from "@mui/icons-material/PreviewRounded";
 import TrackChangesRoundedIcon from "@mui/icons-material/TrackChangesRounded";
 import { useI18n } from "../../i18n/I18nContext";
+import {
+    validateDate,
+    validateFreeText,
+    validatePositiveInteger,
+    validateTimeRange
+} from "../../utils/validation";
 
 const MOTIVO_VALUES = [
     "REPROBACION",
@@ -69,6 +75,7 @@ function Tutoria({
         titulo: "",
         mensaje: ""
     });
+    const [fieldErrors, setFieldErrors] = useState({});
 
     const [usuario] = useState(() => {
         const u = localStorage.getItem("usuario");
@@ -114,6 +121,7 @@ function Tutoria({
     );
 
     const handleMotivoChange = (value) => {
+        setFieldErrors((current) => ({ ...current, motivo: "" }));
         if (form.motivo.includes(value)) {
             setForm({
                 ...form,
@@ -129,28 +137,40 @@ function Tutoria({
     };
 
     const validarCampos = () => {
-        if (!form.alumnoId || !form.fecha || !form.horaIni || !form.horaFin) {
+        const timeErrors = validateTimeRange(form.horaIni, form.horaFin, t);
+        const errors = {
+            alumnoId: validatePositiveInteger(form.alumnoId, t),
+            fecha: validateDate(form.fecha, t),
+            horaIni: timeErrors.start,
+            horaFin: timeErrors.end,
+            motivo: form.motivo.length > 0 && form.motivo.every((item) => MOTIVO_VALUES.includes(item))
+                ? ""
+                : t("common.validation.required"),
+            pts: validateFreeText(form.pts, t, { maxLength: 2000 }),
+            acuerdos: validateFreeText(form.acuerdos, t, { maxLength: 2000 }),
+            seguimientoTitulo: form.seguimientoActivo &&
+                (!form.seguimientoId || form.seguimientoId === "__nuevo__")
+                ? validateFreeText(form.seguimientoTitulo, t, { maxLength: 150 })
+                : "",
+            seguimientoDescripcion: form.seguimientoActivo
+                ? validateFreeText(form.seguimientoDescripcion, t, {
+                    required: false,
+                    maxLength: 500
+                })
+                : ""
+        };
+        Object.keys(errors).forEach((field) => {
+            if (!errors[field]) delete errors[field];
+        });
+        setFieldErrors(errors);
+
+        if (Object.keys(errors).length > 0) {
             setPopup({
                 open: true,
                 loading: false,
                 type: "warning",
                 titulo: t("common.requiredFieldsTitle"),
                 mensaje: t("common.requiredFieldsMessage")
-            });
-            return false;
-        }
-
-        const requiereTitulo = form.seguimientoActivo &&
-            (!form.seguimientoId || form.seguimientoId === "__nuevo__") &&
-            !form.seguimientoTitulo.trim();
-
-        if (requiereTitulo) {
-            setPopup({
-                open: true,
-                loading: false,
-                type: "warning",
-                titulo: t("followup.form.requiredTitle"),
-                mensaje: t("followup.form.requiredMessage")
             });
             return false;
         }
@@ -165,11 +185,20 @@ function Tutoria({
     };
 
     const validarYGuardarVinculacion = () => {
-        const requiereTitulo = form.seguimientoActivo &&
-            (!form.seguimientoId || form.seguimientoId === "__nuevo__") &&
-            !form.seguimientoTitulo.trim();
+        const titleError = form.seguimientoActivo &&
+            (!form.seguimientoId || form.seguimientoId === "__nuevo__")
+            ? validateFreeText(form.seguimientoTitulo, t, { maxLength: 150 })
+            : "";
+        const descriptionError = form.seguimientoActivo
+            ? validateFreeText(form.seguimientoDescripcion, t, { required: false, maxLength: 500 })
+            : "";
+        setFieldErrors((current) => ({
+            ...current,
+            seguimientoTitulo: titleError,
+            seguimientoDescripcion: descriptionError
+        }));
 
-        if (requiereTitulo) {
+        if (titleError || descriptionError) {
             setPopup({
                 open: true,
                 loading: false,
@@ -229,6 +258,8 @@ function Tutoria({
                                         <select
                                             value={form.alumnoId}
                                             disabled={!!id}
+                                            aria-invalid={!!fieldErrors.alumnoId}
+                                            className={fieldErrors.alumnoId ? "input-error" : ""}
                                             onChange={(e) => setForm({
                                                 ...form,
                                                 alumnoId: e.target.value,
@@ -245,6 +276,7 @@ function Tutoria({
                                                 </option>
                                             ))}
                                         </select>
+                                        {fieldErrors.alumnoId && <span className="field-error">{fieldErrors.alumnoId}</span>}
                                     </td>
                                 </tr>
 
@@ -255,8 +287,14 @@ function Tutoria({
                                             type="date"
                                             value={form.fecha}
                                             disabled={!editable}
-                                            onChange={(e) => setForm({ ...form, fecha: e.target.value })}
+                                            onChange={(e) => {
+                                                setForm({ ...form, fecha: e.target.value });
+                                                setFieldErrors((current) => ({ ...current, fecha: "" }));
+                                            }}
+                                            aria-invalid={!!fieldErrors.fecha}
+                                            className={fieldErrors.fecha ? "input-error" : ""}
                                         />
+                                        {fieldErrors.fecha && <span className="field-error">{fieldErrors.fecha}</span>}
                                     </td>
 
                                     <td>{t("tutoring.startTime")}:</td>
@@ -265,8 +303,14 @@ function Tutoria({
                                             type="time"
                                             value={form.horaIni}
                                             disabled={!editable}
-                                            onChange={(e) => setForm({ ...form, horaIni: e.target.value })}
+                                            onChange={(e) => {
+                                                setForm({ ...form, horaIni: e.target.value });
+                                                setFieldErrors((current) => ({ ...current, horaIni: "", horaFin: "" }));
+                                            }}
+                                            aria-invalid={!!fieldErrors.horaIni}
+                                            className={fieldErrors.horaIni ? "input-error" : ""}
                                         />
+                                        {fieldErrors.horaIni && <span className="field-error">{fieldErrors.horaIni}</span>}
                                     </td>
 
                                     <td>{t("tutoring.endTime")}:</td>
@@ -275,8 +319,14 @@ function Tutoria({
                                             type="time"
                                             value={form.horaFin}
                                             disabled={!editable}
-                                            onChange={(e) => setForm({ ...form, horaFin: e.target.value })}
+                                            onChange={(e) => {
+                                                setForm({ ...form, horaFin: e.target.value });
+                                                setFieldErrors((current) => ({ ...current, horaFin: "" }));
+                                            }}
+                                            aria-invalid={!!fieldErrors.horaFin}
+                                            className={fieldErrors.horaFin ? "input-error" : ""}
                                         />
+                                        {fieldErrors.horaFin && <span className="field-error">{fieldErrors.horaFin}</span>}
                                     </td>
                                 </tr>
 
@@ -287,8 +337,14 @@ function Tutoria({
                                             type="date"
                                             value={form.fecha}
                                             disabled={!editable}
-                                            onChange={(e) => setForm({ ...form, fecha: e.target.value })}
+                                            onChange={(e) => {
+                                                setForm({ ...form, fecha: e.target.value });
+                                                setFieldErrors((current) => ({ ...current, fecha: "" }));
+                                            }}
+                                            aria-invalid={!!fieldErrors.fecha}
+                                            className={fieldErrors.fecha ? "input-error" : ""}
                                         />
+                                        {fieldErrors.fecha && <span className="field-error">{fieldErrors.fecha}</span>}
                                     </td>
 
                                     <td colSpan="3">
@@ -297,8 +353,14 @@ function Tutoria({
                                             type="time"
                                             value={form.horaIni}
                                             disabled={!editable}
-                                            onChange={(e) => setForm({ ...form, horaIni: e.target.value })}
+                                            onChange={(e) => {
+                                                setForm({ ...form, horaIni: e.target.value });
+                                                setFieldErrors((current) => ({ ...current, horaIni: "", horaFin: "" }));
+                                            }}
+                                            aria-invalid={!!fieldErrors.horaIni}
+                                            className={fieldErrors.horaIni ? "input-error" : ""}
                                         />
+                                        {fieldErrors.horaIni && <span className="field-error">{fieldErrors.horaIni}</span>}
                                     </td>
 
                                     <td colSpan="3">
@@ -307,8 +369,14 @@ function Tutoria({
                                             type="time"
                                             value={form.horaFin}
                                             disabled={!editable}
-                                            onChange={(e) => setForm({ ...form, horaFin: e.target.value })}
+                                            onChange={(e) => {
+                                                setForm({ ...form, horaFin: e.target.value });
+                                                setFieldErrors((current) => ({ ...current, horaFin: "" }));
+                                            }}
+                                            aria-invalid={!!fieldErrors.horaFin}
+                                            className={fieldErrors.horaFin ? "input-error" : ""}
                                         />
+                                        {fieldErrors.horaFin && <span className="field-error">{fieldErrors.horaFin}</span>}
                                     </td>
                                 </tr>
 
@@ -331,6 +399,11 @@ function Tutoria({
                                         </td>
                                     ))}
                                 </tr>
+                                {fieldErrors.motivo && (
+                                    <tr>
+                                        <td colSpan="8"><span className="field-error">{fieldErrors.motivo}</span></td>
+                                    </tr>
+                                )}
 
                                 <tr className="motivo">
                                     {motivos.slice(4).map(m => (
@@ -354,9 +427,16 @@ function Tutoria({
                                             placeholder={t("tutoring.relevantPoints")}
                                             disabled={!editable}
                                             value={form.pts}
-                                            onChange={(e) => setForm({ ...form, pts: e.target.value })}
+                                            onChange={(e) => {
+                                                setForm({ ...form, pts: e.target.value });
+                                                setFieldErrors((current) => ({ ...current, pts: "" }));
+                                            }}
                                             required
+                                            maxLength={2000}
+                                            aria-invalid={!!fieldErrors.pts}
+                                            className={fieldErrors.pts ? "input-error" : ""}
                                         />
+                                        {fieldErrors.pts && <span className="field-error">{fieldErrors.pts}</span>}
                                     </th>
                                 </tr>
 
@@ -366,9 +446,16 @@ function Tutoria({
                                             placeholder={t("tutoring.commitments")}
                                             disabled={!editable}
                                             value={form.acuerdos}
-                                            onChange={(e) => setForm({ ...form, acuerdos: e.target.value })}
+                                            onChange={(e) => {
+                                                setForm({ ...form, acuerdos: e.target.value });
+                                                setFieldErrors((current) => ({ ...current, acuerdos: "" }));
+                                            }}
                                             required
+                                            maxLength={2000}
+                                            aria-invalid={!!fieldErrors.acuerdos}
+                                            className={fieldErrors.acuerdos ? "input-error" : ""}
                                         />
+                                        {fieldErrors.acuerdos && <span className="field-error">{fieldErrors.acuerdos}</span>}
                                     </th>
                                 </tr>
 
@@ -481,10 +568,18 @@ function Tutoria({
                                                     placeholder={t("followup.form.titlePlaceholder")}
                                                     value={form.seguimientoTitulo}
                                                     inputProps={{ maxLength: 150 }}
-                                                    onChange={(event) => setForm({
-                                                        ...form,
-                                                        seguimientoTitulo: event.target.value
-                                                    })}
+                                                    error={!!fieldErrors.seguimientoTitulo}
+                                                    helperText={fieldErrors.seguimientoTitulo}
+                                                    onChange={(event) => {
+                                                        setForm({
+                                                            ...form,
+                                                            seguimientoTitulo: event.target.value
+                                                        });
+                                                        setFieldErrors((current) => ({
+                                                            ...current,
+                                                            seguimientoTitulo: ""
+                                                        }));
+                                                    }}
                                                 />
                                                 <TextField
                                                     fullWidth
@@ -494,10 +589,18 @@ function Tutoria({
                                                     placeholder={t("followup.form.descriptionPlaceholder")}
                                                     value={form.seguimientoDescripcion}
                                                     inputProps={{ maxLength: 500 }}
-                                                    onChange={(event) => setForm({
-                                                        ...form,
-                                                        seguimientoDescripcion: event.target.value
-                                                    })}
+                                                    error={!!fieldErrors.seguimientoDescripcion}
+                                                    helperText={fieldErrors.seguimientoDescripcion}
+                                                    onChange={(event) => {
+                                                        setForm({
+                                                            ...form,
+                                                            seguimientoDescripcion: event.target.value
+                                                        });
+                                                        setFieldErrors((current) => ({
+                                                            ...current,
+                                                            seguimientoDescripcion: ""
+                                                        }));
+                                                    }}
                                                 />
                                             </>
                                         ) : (

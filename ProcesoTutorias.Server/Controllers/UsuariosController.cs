@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProcesoTutorias.Server.DTOs;
 using ProcesoTutorias.Server.Models;
+using ProcesoTutorias.Server.Validation;
+using ProcesoTutorias.Server.Services;
 
 namespace ProcesoTutorias.Server.Controllers;
 
@@ -12,16 +14,28 @@ namespace ProcesoTutorias.Server.Controllers;
 public class UsuariosController : ControllerBase
 {
     private readonly SistemaTutoriasContext _context;
+    private readonly SessionTokenService _sessionTokenService;
+    private readonly AuditLogService _auditLogService;
 
-    public UsuariosController(SistemaTutoriasContext context)
+    public UsuariosController(
+        SistemaTutoriasContext context,
+        SessionTokenService sessionTokenService,
+        AuditLogService auditLogService)
     {
         _context = context;
+        _sessionTokenService = sessionTokenService;
+        _auditLogService = auditLogService;
     }
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<UsuarioAdminDto>>> ObtenerUsuarios(string? buscar = null, int? idRol = null)
     {
-        string filtro = (buscar ?? string.Empty).Trim();
+        string filtro = InputSanitizer.NormalizeSingleLine(buscar);
+        string? filterError = InputSanitizer.ValidateFreeText(filtro, "La búsqueda", 100, required: false);
+        if (filterError != null)
+            return BadRequest(new { message = filterError });
+        if (idRol.HasValue && !InputSanitizer.IsPositiveId(idRol.Value))
+            return BadRequest(new { message = "[USUARIO_ROL_INVALIDO] El rol debe ser un entero mayor que cero." });
 
         var query = _context.Usuarios.AsNoTracking().Include(u => u.IdRolNavigation).AsQueryable();
 
@@ -57,19 +71,21 @@ public class UsuariosController : ControllerBase
         if (error != null)
             return BadRequest(new { message = error });
 
-        bool correoExiste = await _context.Usuarios.AnyAsync(u => u.Correo == dto.Correo.Trim());
+        string correo = InputSanitizer.NormalizeSingleLine(dto.Correo).ToLowerInvariant();
+        bool correoExiste = await _context.Usuarios.AnyAsync(u => u.Correo == correo);
         if (correoExiste)
             return Conflict(new { message = "[USUARIO_CORREO_DUPLICADO] Ya existe un usuario con ese correo." });
 
         var usuario = new Usuario
         {
-            Nombre = dto.Nombre.Trim(),
-            Apellidos = dto.Apellidos.Trim(),
-            Correo = dto.Correo.Trim(),
-            Telefono = string.IsNullOrWhiteSpace(dto.Telefono) ? null : dto.Telefono.Trim(),
+            Nombre = InputSanitizer.NormalizeSingleLine(dto.Nombre),
+            Apellidos = InputSanitizer.NormalizeSingleLine(dto.Apellidos),
+            Correo = correo,
+            Telefono = string.IsNullOrWhiteSpace(dto.Telefono) ? null : InputSanitizer.NormalizeSingleLine(dto.Telefono),
             IdRol = dto.IdRol,
-            ContrasenaHash = dto.ContrasenaInicial!.Trim(),
-            ReqCambioContra = true
+            ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(dto.ContrasenaInicial!),
+            ReqCambioContra = true,
+            SessionVersion = 1
         };
 
         _context.Usuarios.Add(usuario);
@@ -106,17 +122,23 @@ public class UsuariosController : ControllerBase
         if (usuario == null)
             return NotFound(new { message = "[USUARIO_NO_ENCONTRADO] Usuario no encontrado." });
 
-        bool correoExiste = await _context.Usuarios.AnyAsync(u => u.IdUsuario != idUsuario && u.Correo == dto.Correo.Trim());
+        string correo = InputSanitizer.NormalizeSingleLine(dto.Correo).ToLowerInvariant();
+        bool correoExiste = await _context.Usuarios.AnyAsync(u => u.IdUsuario != idUsuario && u.Correo == correo);
         if (correoExiste)
             return Conflict(new { message = "[USUARIO_CORREO_DUPLICADO] Ya existe un usuario con ese correo." });
 
-        usuario.Nombre = dto.Nombre.Trim();
-        usuario.Apellidos = dto.Apellidos.Trim();
-        usuario.Correo = dto.Correo.Trim();
-        usuario.Telefono = string.IsNullOrWhiteSpace(dto.Telefono) ? null : dto.Telefono.Trim();
+        usuario.Nombre = InputSanitizer.NormalizeSingleLine(dto.Nombre);
+        usuario.Apellidos = InputSanitizer.NormalizeSingleLine(dto.Apellidos);
+        usuario.Correo = correo;
+        usuario.Telefono = string.IsNullOrWhiteSpace(dto.Telefono) ? null : InputSanitizer.NormalizeSingleLine(dto.Telefono);
+        bool roleChanged = usuario.IdRol != dto.IdRol;
         usuario.IdRol = dto.IdRol;
+        if (roleChanged)
+            usuario.SessionVersion++;
 
         await _context.SaveChangesAsync();
+        if (roleChanged)
+            await _sessionTokenService.RevokeAllForUserAsync(usuario.IdUsuario);
 
         return Ok(new { message = "Usuario actualizado correctamente." });
     }
@@ -124,16 +146,24 @@ public class UsuariosController : ControllerBase
     [HttpPut("{idUsuario:int}/contrasena")]
     public async Task<IActionResult> RestablecerContrasena(int idUsuario, [FromBody] UsuarioContrasenaDto dto)
     {
-        if (string.IsNullOrWhiteSpace(dto.ContrasenaInicial) || dto.ContrasenaInicial.Trim().Length < 6)
-            return BadRequest(new { message = "[USUARIO_CONTRASENA_INVALIDA] La contraseña inicial debe tener al menos 6 caracteres." });
+        string? passwordError = InputSanitizer.ValidatePassword(dto.ContrasenaInicial);
+        if (passwordError != null)
+            return BadRequest(new { message = passwordError });
 
         var usuario = await _context.Usuarios.FindAsync(idUsuario);
         if (usuario == null)
             return NotFound(new { message = "[USUARIO_NO_ENCONTRADO] Usuario no encontrado." });
 
-        usuario.ContrasenaHash = dto.ContrasenaInicial.Trim();
+        usuario.ContrasenaHash = BCrypt.Net.BCrypt.HashPassword(dto.ContrasenaInicial);
         usuario.ReqCambioContra = true;
+        usuario.SessionVersion++;
+        _auditLogService.Record(
+            "USUARIO_CONTRASENA_RESTABLECIDA",
+            "Usuario",
+            idUsuario,
+            "Un administrador restableció la contraseña del usuario.");
         await _context.SaveChangesAsync();
+        await _sessionTokenService.RevokeAllForUserAsync(usuario.IdUsuario);
 
         return Ok(new { message = "Contraseña restablecida correctamente." });
     }
@@ -152,6 +182,11 @@ public class UsuariosController : ControllerBase
         if (usuario.Alumnos.Any() || usuario.Maestros.Any())
             return Conflict(new { message = "[USUARIO_CON_DEPENDENCIAS] No se puede eliminar un usuario vinculado a alumno o maestro." });
 
+        _auditLogService.Record(
+            "USUARIO_ELIMINADO",
+            "Usuario",
+            idUsuario,
+            "Cuenta de usuario eliminada.");
         _context.Usuarios.Remove(usuario);
         await _context.SaveChangesAsync();
 
@@ -160,24 +195,35 @@ public class UsuariosController : ControllerBase
 
     private async Task<string?> ValidarUsuario(UsuarioGuardarDto dto, bool esNuevo)
     {
-        if (string.IsNullOrWhiteSpace(dto.Nombre))
-            return "[USUARIO_NOMBRE_REQUERIDO] El nombre es obligatorio.";
+        string? nameError = InputSanitizer.ValidatePersonName(dto.Nombre, "El nombre");
+        if (nameError != null)
+            return nameError;
 
-        if (string.IsNullOrWhiteSpace(dto.Apellidos))
-            return "[USUARIO_APELLIDOS_REQUERIDOS] Los apellidos son obligatorios.";
+        string? lastNameError = InputSanitizer.ValidatePersonName(dto.Apellidos, "Los apellidos");
+        if (lastNameError != null)
+            return lastNameError;
 
-        if (string.IsNullOrWhiteSpace(dto.Correo))
-            return "[USUARIO_CORREO_REQUERIDO] El correo es obligatorio.";
+        string? emailError = InputSanitizer.ValidateEmail(dto.Correo);
+        if (emailError != null)
+            return emailError;
 
-        if (!dto.Correo.Contains('@'))
-            return "[USUARIO_CORREO_INVALIDO] El correo no tiene un formato válido.";
+        string? phoneError = InputSanitizer.ValidatePhone(dto.Telefono);
+        if (phoneError != null)
+            return phoneError;
+
+        if (!InputSanitizer.IsPositiveId(dto.IdRol))
+            return "[USUARIO_ROL_INVALIDO] Selecciona un rol válido.";
 
         bool rolExiste = await _context.Rols.AnyAsync(r => r.IdRol == dto.IdRol);
         if (!rolExiste)
             return "[USUARIO_ROL_INVALIDO] Selecciona un rol válido.";
 
-        if (esNuevo && (string.IsNullOrWhiteSpace(dto.ContrasenaInicial) || dto.ContrasenaInicial.Trim().Length < 6))
-            return "[USUARIO_CONTRASENA_INVALIDA] La contraseña inicial debe tener al menos 6 caracteres.";
+        if (esNuevo)
+        {
+            string? passwordError = InputSanitizer.ValidatePassword(dto.ContrasenaInicial);
+            if (passwordError != null)
+                return passwordError;
+        }
 
         return null;
     }

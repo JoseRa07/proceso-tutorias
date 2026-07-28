@@ -20,6 +20,7 @@ import { useAdminCatalogos } from "../../hooks/useAdministracion";
 import "../../assets/estilos/Administracion.css";
 import { useI18n } from "../../i18n/I18nContext";
 import { translateRole } from "../../i18n/catalogTranslations";
+import { sanitizeSingleLine, validateIdentifier } from "../../utils/validation";
 
 function GestionRoles() {
     const { locale, t } = useI18n();
@@ -46,15 +47,22 @@ function GestionRoles() {
 
     const guardar = async (event) => {
         event.preventDefault();
-        if (!form.nombre.trim()) {
-            setFieldError(t("administration.roles.required"));
+        const validationError = validateIdentifier(form.nombre, t, {
+            maxLength: 50,
+            roleName: true
+        });
+        if (validationError) {
+            setFieldError(validationError);
             return;
         }
 
         try {
             const url = form.idRol ? `/Roles/${form.idRol}` : "/Roles";
             const method = form.idRol ? "PUT" : "POST";
-            await requestAdmin(url, { method, body: JSON.stringify({ nombre: form.nombre }) });
+            await requestAdmin(url, {
+                method,
+                body: JSON.stringify({ nombre: sanitizeSingleLine(form.nombre).toUpperCase() })
+            });
             await cargarRoles();
             limpiar();
             mostrar("success", t("administration.roles.savedTitle"), t("administration.savedMessage"));
@@ -95,7 +103,7 @@ function GestionRoles() {
                                 required
                                 error={!!fieldError}
                                 helperText={fieldError}
-                                inputProps={{ "aria-invalid": !!fieldError }}
+                                inputProps={{ maxLength: 50, "aria-invalid": !!fieldError }}
                             />
                             <Button type="submit" variant="contained" startIcon={<SaveIcon />} sx={{ backgroundColor: "#20A85E" }}>
                                 {t("administration.roles.save")}

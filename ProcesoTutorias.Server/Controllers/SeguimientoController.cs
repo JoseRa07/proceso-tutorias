@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProcesoTutorias.Server.DTOs;
 using ProcesoTutorias.Server.Models;
+using ProcesoTutorias.Server.Validation;
 
 namespace ProcesoTutorias.Server.Controllers;
 
@@ -73,6 +74,9 @@ public class SeguimientoController : ControllerBase
         int idAlumno,
         bool soloActivos = false)
     {
+        if (!InputSanitizer.IsPositiveId(idAlumno))
+            return BadRequest(new { message = "[ALUMNO_INVALIDO] El alumno debe ser un entero mayor que cero." });
+
         var tutor = await ObtenerTutorActual();
         if (tutor == null)
             return Forbid();
@@ -112,6 +116,9 @@ public class SeguimientoController : ControllerBase
     [HttpGet("{idSeguimiento:int}/sesiones")]
     public async Task<ActionResult<IEnumerable<SesionSeguimientoDto>>> ObtenerSesiones(int idSeguimiento)
     {
+        if (!InputSanitizer.IsPositiveId(idSeguimiento))
+            return BadRequest(new { message = "[SEGUIMIENTO_INVALIDO] El seguimiento debe ser un entero mayor que cero." });
+
         var tutor = await ObtenerTutorActual();
         if (tutor == null)
             return Forbid();
@@ -149,6 +156,9 @@ public class SeguimientoController : ControllerBase
         int idSeguimiento,
         [FromBody] SeguimientoEstadoRequest? request)
     {
+        if (!InputSanitizer.IsPositiveId(idSeguimiento))
+            return BadRequest(new { message = "[SEGUIMIENTO_INVALIDO] El seguimiento debe ser un entero mayor que cero." });
+
         if (request == null || string.IsNullOrWhiteSpace(request.Estado))
             return BadRequest(new { message = "El estado es obligatorio." });
 
@@ -179,6 +189,9 @@ public class SeguimientoController : ControllerBase
         int idSesion,
         [FromBody] VincularSeguimientoRequest? request)
     {
+        if (!InputSanitizer.IsPositiveId(idSesion))
+            return BadRequest(new { message = "[TUTORIA_ID_INVALIDO] La tutoría debe ser un entero mayor que cero." });
+
         if (request == null)
             return BadRequest(new { message = "La solicitud está vacía." });
 
@@ -222,6 +235,9 @@ public class SeguimientoController : ControllerBase
 
         if (request.IdSeguimiento.HasValue)
         {
+            if (!InputSanitizer.IsPositiveId(request.IdSeguimiento.Value))
+                return BadRequest(new { message = "[SEGUIMIENTO_INVALIDO] El seguimiento debe ser un entero mayor que cero." });
+
             var seguimientoExistente = await _context.Seguimientos.FirstOrDefaultAsync(item =>
                 item.IdSeguimiento == request.IdSeguimiento.Value &&
                 item.IdTutor == tutor.IdTutor &&
@@ -235,9 +251,19 @@ public class SeguimientoController : ControllerBase
         }
         else
         {
-            var titulo = request.Titulo?.Trim();
-            if (string.IsNullOrWhiteSpace(titulo))
-                return BadRequest(new { message = "Escribe un título para el nuevo seguimiento." });
+            string? titleError = InputSanitizer.ValidateFreeText(request.Titulo, "El título", 150);
+            if (titleError != null)
+                return BadRequest(new { message = titleError });
+
+            string? descriptionError = InputSanitizer.ValidateFreeText(
+                request.Descripcion,
+                "La descripción",
+                500,
+                required: false);
+            if (descriptionError != null)
+                return BadRequest(new { message = descriptionError });
+
+            string titulo = InputSanitizer.NormalizeSingleLine(request.Titulo);
 
             seguimiento = new Seguimiento
             {
@@ -246,7 +272,7 @@ public class SeguimientoController : ControllerBase
                 Titulo = titulo,
                 Descripcion = string.IsNullOrWhiteSpace(request.Descripcion)
                     ? null
-                    : request.Descripcion.Trim(),
+                    : InputSanitizer.NormalizeMultiline(request.Descripcion),
                 Estado = "ACTIVO",
                 FechaCreacion = DateTime.UtcNow,
                 FechaActualizacion = DateTime.UtcNow

@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProcesoTutorias.Server.DTOs;
 using ProcesoTutorias.Server.Models;
+using ProcesoTutorias.Server.Validation;
+using ProcesoTutorias.Server.Services;
 
 namespace ProcesoTutorias.Server.Controllers;
 
@@ -15,16 +17,23 @@ public class TutoresController : ControllerBase
     private const int RolMaestro = 4;
 
     private readonly SistemaTutoriasContext _context;
+    private readonly SessionTokenService _sessionTokenService;
 
-    public TutoresController(SistemaTutoriasContext context)
+    public TutoresController(
+        SistemaTutoriasContext context,
+        SessionTokenService sessionTokenService)
     {
         _context = context;
+        _sessionTokenService = sessionTokenService;
     }
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<TutorAdminDto>>> ObtenerTutores(string? buscar = null)
     {
-        string filtro = (buscar ?? string.Empty).Trim();
+        string filtro = InputSanitizer.NormalizeSingleLine(buscar);
+        string? filterError = InputSanitizer.ValidateFreeText(filtro, "La búsqueda", 100, required: false);
+        if (filterError != null)
+            return BadRequest(new { message = filterError });
 
         var query = _context.Maestros
             .AsNoTracking()
@@ -96,7 +105,8 @@ public class TutoresController : ControllerBase
         if (usuarioConMaestro)
             return Conflict(new { message = "[TUTOR_USUARIO_DUPLICADO] Ese usuario ya tiene registro de maestro." });
 
-        bool codigoExiste = await _context.Maestros.AnyAsync(m => m.CodEmpleado == dto.CodEmpleado.Trim());
+        string codigo = InputSanitizer.NormalizeSingleLine(dto.CodEmpleado);
+        bool codigoExiste = await _context.Maestros.AnyAsync(m => m.CodEmpleado == codigo);
         if (codigoExiste)
             return Conflict(new { message = "[TUTOR_CODIGO_DUPLICADO] Ya existe un maestro con ese código de empleado." });
 
@@ -107,7 +117,7 @@ public class TutoresController : ControllerBase
         var maestro = new Maestro
         {
             IdUsuario = dto.IdUsuario,
-            CodEmpleado = dto.CodEmpleado.Trim(),
+            CodEmpleado = codigo,
             Vigencia = dto.Vigencia
         };
 
@@ -117,14 +127,18 @@ public class TutoresController : ControllerBase
         if (dto.ActivarComoTutor)
         {
             _context.Tutors.Add(new Tutor { IdMaestro = maestro.IdMaestro });
+            if (usuario.IdRol != RolTutor)
+                usuario.SessionVersion++;
             usuario.IdRol = RolTutor;
         }
         else if (usuario.IdRol == RolTutor)
         {
             usuario.IdRol = RolMaestro;
+            usuario.SessionVersion++;
         }
 
         await _context.SaveChangesAsync();
+        await _sessionTokenService.RevokeAllForUserAsync(usuario.IdUsuario);
 
         return Ok(new { message = "Registro de maestro/tutor guardado correctamente." });
     }
@@ -132,18 +146,22 @@ public class TutoresController : ControllerBase
     [HttpPut("{idMaestro:int}")]
     public async Task<IActionResult> ActualizarMaestro(int idMaestro, [FromBody] MaestroActualizarDto dto)
     {
-        if (string.IsNullOrWhiteSpace(dto.CodEmpleado))
-            return BadRequest(new { message = "[TUTOR_CODIGO_REQUERIDO] El código de empleado es obligatorio." });
+        string? codeError = InputSanitizer.ValidateIdentifier(dto.CodEmpleado, "El código de empleado", 30);
+        if (codeError != null)
+            return BadRequest(new { message = codeError });
+        if (dto.Vigencia == default || dto.Vigencia < DateOnly.FromDateTime(DateTime.Today))
+            return BadRequest(new { message = "[TUTOR_VIGENCIA_INVALIDA] La vigencia no puede ser anterior al día de hoy." });
 
         var maestro = await _context.Maestros.FindAsync(idMaestro);
         if (maestro == null)
             return NotFound(new { message = "[TUTOR_MAESTRO_NO_ENCONTRADO] Maestro no encontrado." });
 
-        bool codigoExiste = await _context.Maestros.AnyAsync(m => m.IdMaestro != idMaestro && m.CodEmpleado == dto.CodEmpleado.Trim());
+        string codigo = InputSanitizer.NormalizeSingleLine(dto.CodEmpleado);
+        bool codigoExiste = await _context.Maestros.AnyAsync(m => m.IdMaestro != idMaestro && m.CodEmpleado == codigo);
         if (codigoExiste)
             return Conflict(new { message = "[TUTOR_CODIGO_DUPLICADO] Ya existe un maestro con ese código de empleado." });
 
-        maestro.CodEmpleado = dto.CodEmpleado.Trim();
+        maestro.CodEmpleado = codigo;
         maestro.Vigencia = dto.Vigencia;
         await _context.SaveChangesAsync();
 
@@ -162,9 +180,15 @@ public class TutoresController : ControllerBase
 
         var usuario = await _context.Usuarios.FindAsync(maestro.IdUsuario);
         if (usuario != null)
+        {
+            if (usuario.IdRol != RolTutor)
+                usuario.SessionVersion++;
             usuario.IdRol = RolTutor;
+        }
 
         await _context.SaveChangesAsync();
+        if (usuario != null)
+            await _sessionTokenService.RevokeAllForUserAsync(usuario.IdUsuario);
 
         return Ok(new { message = "Tutor activado correctamente." });
     }
@@ -186,28 +210,34 @@ public class TutoresController : ControllerBase
 
         var usuario = await _context.Usuarios.FindAsync(tutor.IdMaestroNavigation.IdUsuario);
         if (usuario != null)
+        {
             usuario.IdRol = RolMaestro;
+            usuario.SessionVersion++;
+        }
 
         _context.Tutors.Remove(tutor);
         await _context.SaveChangesAsync();
+        if (usuario != null)
+            await _sessionTokenService.RevokeAllForUserAsync(usuario.IdUsuario);
 
         return Ok(new { message = "Tutor desactivado correctamente." });
     }
 
     private async Task<string?> ValidarMaestro(int idUsuario, string? codEmpleado, DateOnly vigencia)
     {
-        if (idUsuario <= 0)
+        if (!InputSanitizer.IsPositiveId(idUsuario))
             return "[TUTOR_USUARIO_REQUERIDO] Selecciona un usuario.";
 
-        if (string.IsNullOrWhiteSpace(codEmpleado))
-            return "[TUTOR_CODIGO_REQUERIDO] El código de empleado es obligatorio.";
+        string? codeError = InputSanitizer.ValidateIdentifier(codEmpleado, "El código de empleado", 30);
+        if (codeError != null)
+            return codeError;
 
         bool usuarioExiste = await _context.Usuarios.AnyAsync(u => u.IdUsuario == idUsuario);
         if (!usuarioExiste)
             return "[TUTOR_USUARIO_NO_ENCONTRADO] Usuario no encontrado.";
 
-        if (vigencia == default)
-            return "[TUTOR_VIGENCIA_REQUERIDA] La vigencia es obligatoria.";
+        if (vigencia == default || vigencia < DateOnly.FromDateTime(DateTime.Today))
+            return "[TUTOR_VIGENCIA_INVALIDA] La vigencia no puede ser anterior al día de hoy.";
 
         return null;
     }

@@ -1,11 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ProcesoTutorias.Server.Models;
 using ProcesoTutorias.Server.DTOs;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace ProcesoTutorias.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "ALUMNO,TUTOR")]
     public class GrupoController : ControllerBase
     {
         private readonly SistemaTutoriasContext _context;
@@ -18,6 +21,15 @@ namespace ProcesoTutorias.Server.Controllers
         [HttpGet("{idUsuario}")]
         public IActionResult ObtenerGrupo(int idUsuario)
         {
+            if (
+                User.IsInRole("ALUMNO") &&
+                (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int idUsuarioActual) ||
+                 idUsuarioActual != idUsuario)
+            )
+            {
+                return Forbid();
+            }
+
             var grupoAlumno = (from a in _context.Alumnos
                                join g in _context.Grupos on a.IdGrupo equals g.IdGrupo
                                join c in _context.Carreras on g.IdCarrera equals c.IdCarrera into carr

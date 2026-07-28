@@ -39,8 +39,11 @@ public class BackupController : ControllerBase
     }
 
     [HttpPost("restore")]
-    public async Task<ActionResult<RestoreResult>> Restore([FromBody] RestoreRequest req, CancellationToken cancellationToken)
+    public async Task<ActionResult<RestoreResult>> Restore([FromBody] RestoreRequest? req, CancellationToken cancellationToken)
     {
+        if (req == null || string.IsNullOrWhiteSpace(req.FilePath))
+            return BadRequest(new { message = "[BACKUP_RUTA_REQUERIDA] Selecciona un archivo de respaldo." });
+
         try
         {
             var result = await _backupService.RestoreBackupAsync(req.FilePath, cancellationToken);
@@ -61,6 +64,10 @@ public class BackupController : ControllerBase
     {
         if (req == null)
             return BadRequest(new { message = "[BACKUP_PROGRAMACION_REQUERIDA] Indica la fecha, hora y tipo de respaldo." });
+        if (req.Type is not ("COMPLETO" or "INCREMENTAL"))
+            return BadRequest(new { message = "[BACKUP_TIPO_INVALIDO] Selecciona un tipo de respaldo válido." });
+        if (string.IsNullOrWhiteSpace(req.ScheduledAt) || req.ScheduledAt.Length > 35)
+            return BadRequest(new { message = "[BACKUP_FECHA_INVALIDA] La fecha y hora programada no es válida." });
 
         if (!DateTime.TryParse(req.ScheduledAt, out DateTime scheduledAt))
             return BadRequest(new { message = "[BACKUP_FECHA_INVALIDA] La fecha y hora programada no es válida." });

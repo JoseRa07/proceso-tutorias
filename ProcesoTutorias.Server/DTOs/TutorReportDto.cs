@@ -11,6 +11,8 @@
         public int TutoriasEnEdicion { get; set; }
         public int TotalJustificantes { get; set; }
         public int JustificantesPendientes { get; set; }
+        public int JustificantesAprobados { get; set; }
+        public int JustificantesRechazados { get; set; }
 
         public List<AlumnoResumenDto> Alumnos { get; set; } = new();
         public List<JustificanteResumenDto> Justificantes { get; set; } = new();

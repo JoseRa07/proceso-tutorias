@@ -39,10 +39,16 @@ function Tutorias() {
     const solicitudInicial = usuario?.id_rol === 3
         ? location.state?.crearTutoria || null
         : null;
+    const idTutoriaInicial = Number(location.state?.abrirTutoriaId);
+    const detalleInicial = Number.isInteger(idTutoriaInicial) && idTutoriaInicial > 0
+        ? idTutoriaInicial
+        : null;
 
     const [openFiltro, setOpenFiltro] = useState(false);
-    const [openTutoria, setOpenTutoria] = useState(() => !!solicitudInicial);
-    const [tutoriaSeleccionada, setTutoriaSeleccionada] = useState(null);
+    const [openTutoria, setOpenTutoria] = useState(
+        () => Boolean(solicitudInicial || detalleInicial)
+    );
+    const [tutoriaSeleccionada, setTutoriaSeleccionada] = useState(detalleInicial);
     const [tutoriaInicial, setTutoriaInicial] = useState(solicitudInicial);
     const [refreshKey, setRefreshKey] = useState(0);
 
@@ -73,9 +79,9 @@ function Tutorias() {
     }, [usuario, navigate]);
 
     useEffect(() => {
-        if (!solicitudInicial) return;
+        if (!solicitudInicial && !detalleInicial) return;
         navigate(location.pathname, { replace: true, state: null });
-    }, [location.pathname, navigate, solicitudInicial]);
+    }, [detalleInicial, location.pathname, navigate, solicitudInicial]);
 
     const { tutorias, loading, alumnos } = useTutorias(
         usuario,

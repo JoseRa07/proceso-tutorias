@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using ProcesoTutorias.Server.Validation;
 using Microsoft.Data.SqlClient;
 
 namespace ProcesoTutorias.Server.Services;
@@ -415,12 +416,20 @@ public class LogicalBackupService
     {
         if (string.IsNullOrWhiteSpace(filePath))
             throw new InvalidOperationException("[BACKUP_RUTA_REQUERIDA] Selecciona un archivo de respaldo.");
+        if (filePath.Length > 260 ||
+            filePath.Contains('/') ||
+            filePath.Contains("..", StringComparison.Ordinal) ||
+            InputSanitizer.HasUnsafeText(filePath))
+        {
+            throw new InvalidOperationException("[BACKUP_RUTA_INVALIDA] La ruta contiene caracteres o secuencias no permitidas.");
+        }
 
         string fullPath = Path.GetFullPath(filePath.Trim().Trim('"'));
-        string backupRoot = Path.GetFullPath(BackupFolder);
+        string backupRoot = Path.GetFullPath(BackupFolder).TrimEnd(Path.DirectorySeparatorChar);
+        string? containingFolder = Path.GetDirectoryName(fullPath)?.TrimEnd(Path.DirectorySeparatorChar);
 
-        if (!fullPath.StartsWith(backupRoot, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("[BACKUP_RUTA_INVALIDA] El archivo debe estar dentro de la carpeta de respaldos.");
+        if (!string.Equals(containingFolder, backupRoot, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("[BACKUP_RUTA_INVALIDA] El archivo debe estar directamente dentro de la carpeta de respaldos.");
 
         if (!File.Exists(fullPath))
             throw new FileNotFoundException("[BACKUP_NO_ENCONTRADO] No se encontró el archivo de respaldo.");

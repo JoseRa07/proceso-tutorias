@@ -24,6 +24,15 @@ import { useAdminCatalogos } from "../../hooks/useAdministracion";
 import "../../assets/estilos/Administracion.css";
 import { useI18n } from "../../i18n/I18nContext";
 import { translateRole } from "../../i18n/catalogTranslations";
+import {
+    sanitizeSingleLine,
+    validateEmail,
+    validatePassword,
+    validatePersonName,
+    validatePhone,
+    validatePositiveInteger,
+    validateFreeText
+} from "../../utils/validation";
 
 const inicial = {
     idUsuario: null,
@@ -65,13 +74,17 @@ function GestionUsuarios() {
     };
 
     const validar = () => {
-        const errores = {};
-        if (!form.nombre.trim()) errores.nombre = t("administration.users.nameRequired");
-        if (!form.apellidos.trim()) errores.apellidos = t("administration.users.lastNameRequired");
-        if (!form.correo.trim()) errores.correo = t("administration.users.emailRequired");
-        if (form.correo && !form.correo.includes("@")) errores.correo = t("administration.users.invalidEmail");
-        if (!form.idRol) errores.idRol = t("administration.users.roleRequired");
-        if (!form.idUsuario && form.contrasenaInicial.trim().length < 6) errores.contrasenaInicial = t("administration.users.passwordLength");
+        const errores = {
+            nombre: validatePersonName(form.nombre, t),
+            apellidos: validatePersonName(form.apellidos, t),
+            correo: validateEmail(form.correo, t),
+            telefono: validatePhone(form.telefono, t),
+            idRol: validatePositiveInteger(form.idRol, t),
+            contrasenaInicial: !form.idUsuario ? validatePassword(form.contrasenaInicial, t) : ""
+        };
+        Object.keys(errores).forEach((campo) => {
+            if (!errores[campo]) delete errores[campo];
+        });
         setFieldErrors(errores);
         return Object.keys(errores).length === 0;
     };
@@ -82,10 +95,10 @@ function GestionUsuarios() {
 
         try {
             const payload = {
-                nombre: form.nombre,
-                apellidos: form.apellidos,
-                correo: form.correo,
-                telefono: form.telefono,
+                nombre: sanitizeSingleLine(form.nombre),
+                apellidos: sanitizeSingleLine(form.apellidos),
+                correo: sanitizeSingleLine(form.correo).toLowerCase(),
+                telefono: sanitizeSingleLine(form.telefono),
                 idRol: Number(form.idRol),
                 contrasenaInicial: form.contrasenaInicial
             };
@@ -127,6 +140,11 @@ function GestionUsuarios() {
     const restablecer = async (item) => {
         const nueva = window.prompt(t("administration.users.resetPrompt", { name: `${item.nombre} ${item.apellidos}` }));
         if (!nueva) return;
+        const passwordError = validatePassword(nueva, t);
+        if (passwordError) {
+            mostrar("error", t("administration.users.resetFailed"), passwordError);
+            return;
+        }
 
         try {
             await requestAdmin(`/Usuarios/${item.idUsuario}/contrasena`, {
@@ -142,7 +160,10 @@ function GestionUsuarios() {
 
     const buscar = async (event) => {
         event.preventDefault();
-        await cargarUsuarios({ buscar: filtro });
+        const filterError = validateFreeText(filtro, t, { required: false, maxLength: 100 });
+        setFieldErrors((current) => ({ ...current, filtro: filterError }));
+        if (filterError) return;
+        await cargarUsuarios({ buscar: sanitizeSingleLine(filtro) });
     };
 
     return (
@@ -157,10 +178,10 @@ function GestionUsuarios() {
                     <div className="admin-panel">
                         <form className="admin-form" onSubmit={guardar}>
                             <Typography fontWeight="bold">{form.idUsuario ? t("administration.users.update") : t("administration.users.register")}</Typography>
-                            <TextField label={t("administration.users.name")} value={form.nombre} onChange={(e) => actualizarForm("nombre", e.target.value)} required error={!!fieldErrors.nombre} helperText={fieldErrors.nombre} />
-                            <TextField label={t("administration.users.lastName")} value={form.apellidos} onChange={(e) => actualizarForm("apellidos", e.target.value)} required error={!!fieldErrors.apellidos} helperText={fieldErrors.apellidos} />
-                            <TextField label={t("administration.users.email")} type="email" value={form.correo} onChange={(e) => actualizarForm("correo", e.target.value)} required error={!!fieldErrors.correo} helperText={fieldErrors.correo} />
-                            <TextField label={t("administration.users.phone")} value={form.telefono} onChange={(e) => actualizarForm("telefono", e.target.value)} />
+                            <TextField label={t("administration.users.name")} value={form.nombre} onChange={(e) => actualizarForm("nombre", e.target.value)} required error={!!fieldErrors.nombre} helperText={fieldErrors.nombre} inputProps={{ maxLength: 80, "aria-invalid": !!fieldErrors.nombre }} />
+                            <TextField label={t("administration.users.lastName")} value={form.apellidos} onChange={(e) => actualizarForm("apellidos", e.target.value)} required error={!!fieldErrors.apellidos} helperText={fieldErrors.apellidos} inputProps={{ maxLength: 80, "aria-invalid": !!fieldErrors.apellidos }} />
+                            <TextField label={t("administration.users.email")} type="email" value={form.correo} onChange={(e) => actualizarForm("correo", e.target.value)} required error={!!fieldErrors.correo} helperText={fieldErrors.correo} inputProps={{ maxLength: 254, "aria-invalid": !!fieldErrors.correo }} />
+                            <TextField label={t("administration.users.phone")} value={form.telefono} onChange={(e) => actualizarForm("telefono", e.target.value)} error={!!fieldErrors.telefono} helperText={fieldErrors.telefono} inputProps={{ inputMode: "numeric", pattern: "[0-9]*", maxLength: 10, "aria-invalid": !!fieldErrors.telefono }} />
                             <FormControl required error={!!fieldErrors.idRol}>
                                 <InputLabel>{t("administration.users.role")}</InputLabel>
                                 <Select label={t("administration.users.role")} value={form.idRol} onChange={(e) => actualizarForm("idRol", e.target.value)}>
@@ -171,7 +192,7 @@ function GestionUsuarios() {
                                 {fieldErrors.idRol && <Typography color="error" fontSize={12} mt={0.5}>{fieldErrors.idRol}</Typography>}
                             </FormControl>
                             {!form.idUsuario && (
-                                <TextField label={t("administration.users.initialPassword")} type="password" value={form.contrasenaInicial} onChange={(e) => actualizarForm("contrasenaInicial", e.target.value)} required error={!!fieldErrors.contrasenaInicial} helperText={fieldErrors.contrasenaInicial} />
+                                <TextField label={t("administration.users.initialPassword")} type="password" value={form.contrasenaInicial} onChange={(e) => actualizarForm("contrasenaInicial", e.target.value)} required error={!!fieldErrors.contrasenaInicial} helperText={fieldErrors.contrasenaInicial} inputProps={{ minLength: 6, maxLength: 72, "aria-invalid": !!fieldErrors.contrasenaInicial }} />
                             )}
                             <Button type="submit" variant="contained" startIcon={<SaveIcon />} sx={{ backgroundColor: "#20A85E" }}>{t("administration.users.save")}</Button>
                         </form>
@@ -180,7 +201,7 @@ function GestionUsuarios() {
                     <div className="admin-panel">
                         {error && <Box className="admin-empty">{error}</Box>}
                         <Box component="form" className="admin-actions" onSubmit={buscar} mb={1}>
-                            <TextField size="small" label={t("common.search")} value={filtro} onChange={(e) => setFiltro(e.target.value)} />
+                            <TextField size="small" label={t("common.search")} value={filtro} onChange={(e) => { setFiltro(e.target.value); setFieldErrors((current) => ({ ...current, filtro: "" })); }} error={!!fieldErrors.filtro} helperText={fieldErrors.filtro} inputProps={{ maxLength: 100, "aria-invalid": !!fieldErrors.filtro }} />
                             <Button type="submit">{t("administration.filter")}</Button>
                         </Box>
 

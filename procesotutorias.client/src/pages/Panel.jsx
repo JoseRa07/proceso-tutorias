@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 
 import Layout from "../componentes/layout";
 import "../assets/estilos/Panel.css";
-import Alerta from "../componentes/Alerta";
 
 import {
     Box,
@@ -25,8 +24,6 @@ import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import GroupsIcon from "@mui/icons-material/Groups";
 import TrackChangesRoundedIcon from "@mui/icons-material/TrackChangesRounded";
 
-import CambiarContra from "../componentes/Auth/CambiarContra";
-
 import { usePanelInfo } from "../hooks/usePanelInfo";
 import { saludo } from "../utils/PanelUtils";
 import { useI18n } from "../i18n/I18nContext";
@@ -40,16 +37,6 @@ const cardAnimada = {
 function Panel() {
     const { formatDate, t } = useI18n();
 
-    const [popup, setPopup] = useState({
-        open: false,
-        loading: false,
-        type: "info",
-        titulo: "",
-        mensaje: ""
-    });
-
-    const [showCambiarPass, setShowCambiarPass] = useState(false);
-
     const navigate = useNavigate();
 
     const [usuario] = useState(() => {
@@ -61,6 +48,9 @@ function Panel() {
     const nombreUsuario = usuario?.nombre || t("panel.user");
     const rolNombre = usuario?.rol ? translateRole(t, usuario.rol) : t("panel.activeAccount");
     const tutoriasCompletadas = tutorias.filter((tutoria) => tutoria.estado === "COMPLETADA");
+    const abrirDetalleTutoria = (idSesion) => {
+        navigate("/Tutorias", { state: { abrirTutoriaId: idSesion } });
+    };
 
     const rutasRol = {
         1: [
@@ -91,31 +81,6 @@ function Panel() {
             navigate("/");
         }
     }, [usuario, navigate]);
-
-    useEffect(() => {
-        if (usuario?.req_cambio_contra) {
-
-            const openTimer = setTimeout(() => {
-                setPopup({
-                    open: true,
-                    loading: false,
-                    type: "info",
-                    titulo: t("auth.changeRequiredTitle"),
-                    mensaje: t("auth.changeRequiredMessage")
-                });
-            }, 0);
-
-            const closeTimer = setTimeout(() => {
-                setPopup(prev => ({ ...prev, open: false }));
-                setShowCambiarPass(true);
-            }, 5000);
-
-            return () => {
-                clearTimeout(openTimer);
-                clearTimeout(closeTimer);
-            };
-        }
-    }, [usuario, t]);
 
     return (
         <Layout contentClassName="panel-layout-gradient">
@@ -229,7 +194,7 @@ function Panel() {
                                                 <Box
                                                     key={tutoria.idSesion}
                                                     className="tutoria-item"
-                                                    onClick={() => navigate(`/Tutoria/${tutoria.idSesion}`)}
+                                                    onClick={() => abrirDetalleTutoria(tutoria.idSesion)}
                                                     sx={{
                                                         cursor: "pointer",
                                                         "&:hover": {
@@ -283,7 +248,7 @@ function Panel() {
                                                 <Box
                                                     key={tutoria.idSesion}
                                                     className="tutoria-item"
-                                                    onClick={() => navigate(`/Tutoria/${tutoria.idSesion}`)}
+                                                    onClick={() => abrirDetalleTutoria(tutoria.idSesion)}
                                                     sx={{
                                                         cursor: "pointer",
                                                         "&:hover": {
@@ -311,26 +276,6 @@ function Panel() {
                 </div>
             </div>
 
-            <CambiarContra
-                isOpen={showCambiarPass}
-                obligatorio={usuario?.req_cambio_contra}
-                onClose={() => setShowCambiarPass(false)}
-            />
-
-            <Alerta
-                open={popup.open}
-                loading={popup.loading}
-                type={popup.type}
-                titulo={popup.titulo}
-                mensaje={popup.mensaje}
-                onClose={() => {
-                    setPopup(prev => ({ ...prev, open: false }));
-
-                    if (usuario?.req_cambio_contra) {
-                        setShowCambiarPass(true);
-                    }
-                }}
-            />
         </Layout>
     );
 }

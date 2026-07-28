@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProcesoTutorias.Server.DTOs;
 using ProcesoTutorias.Server.Models;
+using ProcesoTutorias.Server.Validation;
+using ProcesoTutorias.Server.Services;
 
 namespace ProcesoTutorias.Server.Controllers;
 
@@ -12,10 +14,17 @@ namespace ProcesoTutorias.Server.Controllers;
 public class RolesController : ControllerBase
 {
     private readonly SistemaTutoriasContext _context;
+    private readonly SessionTokenService _sessionTokenService;
+    private readonly AuditLogService _auditLogService;
 
-    public RolesController(SistemaTutoriasContext context)
+    public RolesController(
+        SistemaTutoriasContext context,
+        SessionTokenService sessionTokenService,
+        AuditLogService auditLogService)
     {
         _context = context;
+        _sessionTokenService = sessionTokenService;
+        _auditLogService = auditLogService;
     }
 
     [HttpGet]
@@ -40,8 +49,9 @@ public class RolesController : ControllerBase
     {
         string nombre = NormalizarNombre(dto.Nombre);
 
-        if (string.IsNullOrWhiteSpace(nombre))
-            return BadRequest(new { message = "[ROL_NOMBRE_REQUERIDO] El nombre del rol es obligatorio." });
+        string? validationError = InputSanitizer.ValidateIdentifier(nombre, "El nombre del rol", 50, roleName: true);
+        if (validationError != null)
+            return BadRequest(new { message = validationError });
 
         bool existe = await _context.Rols.AnyAsync(r => r.Nombre == nombre);
         if (existe)
@@ -64,10 +74,13 @@ public class RolesController : ControllerBase
     {
         string nombre = NormalizarNombre(dto.Nombre);
 
-        if (string.IsNullOrWhiteSpace(nombre))
-            return BadRequest(new { message = "[ROL_NOMBRE_REQUERIDO] El nombre del rol es obligatorio." });
+        string? validationError = InputSanitizer.ValidateIdentifier(nombre, "El nombre del rol", 50, roleName: true);
+        if (validationError != null)
+            return BadRequest(new { message = validationError });
 
-        var rol = await _context.Rols.FindAsync(idRol);
+        var rol = await _context.Rols
+            .Include(item => item.Usuarios)
+            .FirstOrDefaultAsync(item => item.IdRol == idRol);
         if (rol == null)
             return NotFound(new { message = "[ROL_NO_ENCONTRADO] Rol no encontrado." });
 
@@ -75,8 +88,18 @@ public class RolesController : ControllerBase
         if (existe)
             return Conflict(new { message = "[ROL_DUPLICADO] Ya existe un rol con ese nombre." });
 
+        string previousName = rol.Nombre;
         rol.Nombre = nombre;
+        foreach (var user in rol.Usuarios)
+            user.SessionVersion++;
+        _auditLogService.Record(
+            "ROL_MODIFICADO",
+            "Rol",
+            idRol,
+            $"Nombre cambiado de {previousName} a {nombre}.");
         await _context.SaveChangesAsync();
+        foreach (var user in rol.Usuarios)
+            await _sessionTokenService.RevokeAllForUserAsync(user.IdUsuario);
 
         return Ok(new { message = "Rol actualizado correctamente." });
     }
@@ -91,6 +114,11 @@ public class RolesController : ControllerBase
         if (rol.Usuarios.Any())
             return Conflict(new { message = "[ROL_EN_USO] No se puede eliminar un rol con usuarios asignados." });
 
+        _auditLogService.Record(
+            "ROL_ELIMINADO",
+            "Rol",
+            idRol,
+            $"Rol eliminado: {rol.Nombre}.");
         _context.Rols.Remove(rol);
         await _context.SaveChangesAsync();
 
@@ -99,6 +127,6 @@ public class RolesController : ControllerBase
 
     private static string NormalizarNombre(string? nombre)
     {
-        return (nombre ?? string.Empty).Trim().ToUpperInvariant();
+        return InputSanitizer.NormalizeSingleLine(nombre).ToUpperInvariant();
     }
 }

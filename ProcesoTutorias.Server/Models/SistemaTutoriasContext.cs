@@ -17,6 +17,10 @@ public partial class SistemaTutoriasContext : DbContext
 
     public virtual DbSet<Alumno> Alumnos { get; set; }
 
+    public virtual DbSet<AuditLog> AuditLogs { get; set; }
+
+    public virtual DbSet<AuthSession> AuthSessions { get; set; }
+
     public virtual DbSet<Carrera> Carreras { get; set; }
 
     public virtual DbSet<Cuatrimestre> Cuatrimestres { get; set; }
@@ -49,6 +53,66 @@ public partial class SistemaTutoriasContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<AuditLog>(entity =>
+        {
+            entity.HasKey(e => e.IdAuditLog);
+            entity.ToTable("AuditLog");
+            entity.HasIndex(e => e.CreatedAtUtc);
+            entity.HasIndex(e => e.Action);
+            entity.Property(e => e.IdAuditLog).HasColumnName("id_audit_log");
+            entity.Property(e => e.CreatedAtUtc)
+                .HasDefaultValueSql("SYSUTCDATETIME()")
+                .HasColumnName("created_at_utc");
+            entity.Property(e => e.ActorUserId).HasColumnName("actor_user_id");
+            entity.Property(e => e.ActorEmail)
+                .HasMaxLength(150)
+                .IsUnicode(false)
+                .HasColumnName("actor_email");
+            entity.Property(e => e.ActorRole)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("actor_role");
+            entity.Property(e => e.Action)
+                .HasMaxLength(80)
+                .IsUnicode(false)
+                .HasColumnName("action");
+            entity.Property(e => e.Entity)
+                .HasMaxLength(80)
+                .IsUnicode(false)
+                .HasColumnName("entity");
+            entity.Property(e => e.EntityId)
+                .HasMaxLength(64)
+                .IsUnicode(false)
+                .HasColumnName("entity_id");
+            entity.Property(e => e.Detail)
+                .HasMaxLength(500)
+                .HasColumnName("detail");
+            entity.Property(e => e.IpAddress)
+                .HasMaxLength(45)
+                .IsUnicode(false)
+                .HasColumnName("ip_address");
+        });
+
+        modelBuilder.Entity<AuthSession>(entity =>
+        {
+            entity.HasKey(e => e.IdSession);
+            entity.ToTable("AuthSession");
+            entity.HasIndex(e => e.RefreshTokenHash).IsUnique();
+            entity.HasIndex(e => new { e.IdUsuario, e.RevokedAt });
+            entity.Property(e => e.IdSession).HasColumnName("id_session");
+            entity.Property(e => e.IdUsuario).HasColumnName("id_usuario");
+            entity.Property(e => e.SessionVersion).HasColumnName("session_version");
+            entity.Property(e => e.Jti).HasMaxLength(64).IsUnicode(false).HasColumnName("jti");
+            entity.Property(e => e.RefreshTokenHash).HasMaxLength(64).IsUnicode(false).HasColumnName("refresh_token_hash");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.ExpiresAt).HasColumnName("expires_at");
+            entity.Property(e => e.RevokedAt).HasColumnName("revoked_at");
+            entity.HasOne(e => e.IdUsuarioNavigation)
+                .WithMany(e => e.AuthSessions)
+                .HasForeignKey(e => e.IdUsuario)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<Alumno>(entity =>
         {
             entity.HasKey(e => e.IdAlumno).HasName("PK__Alumno__6D77A7F18340B14D");
@@ -400,6 +464,9 @@ public partial class SistemaTutoriasContext : DbContext
             entity.Property(e => e.ReqCambioContra)
                 .HasDefaultValue(true)
                 .HasColumnName("req_cambio_contra");
+            entity.Property(e => e.SessionVersion)
+                .HasDefaultValue(1)
+                .HasColumnName("session_version");
             entity.Property(e => e.Telefono)
                 .HasMaxLength(20)
                 .IsUnicode(false)

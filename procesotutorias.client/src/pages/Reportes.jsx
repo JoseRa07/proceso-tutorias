@@ -19,11 +19,11 @@ import TaskAltIcon from "@mui/icons-material/TaskAlt";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import ArticleIcon from "@mui/icons-material/Article";
 import TipsAndUpdatesIcon from "@mui/icons-material/TipsAndUpdates";
-import html2pdf from "html2pdf.js";
 
 import { useReportes } from "../hooks/useReportes";
 import { useI18n } from "../i18n/I18nContext";
 import { translateReportText } from "../i18n/catalogTranslations";
+import { downloadReportPdf } from "../utils/reportPdf";
 
 const porcentaje = (valor, total) => {
     if (!total) return 0;
@@ -40,8 +40,9 @@ const getMetricas = (usuario, reporte, t) => {
             { label: t("reports.metrics.users"), value: reporte.totalUsuarios, icon: GroupIcon },
             { label: t("reports.metrics.students"), value: reporte.totalAlumnos, icon: SchoolIcon },
             { label: t("reports.metrics.sessions"), value: reporte.totalTutorias, icon: AssessmentIcon },
-            { label: t("reports.metrics.pending"), value: reporte.tutoriasPendientes, icon: WarningAmberIcon, tone: "warning" },
+            { label: t("reports.metrics.tutoringPending"), value: reporte.tutoriasPendientes, icon: WarningAmberIcon, tone: "warning" },
             { label: t("reports.metrics.excuses"), value: reporte.totalJustificantes, icon: ArticleIcon },
+            { label: t("reports.metrics.excusesPending"), value: reporte.justificantesPendientes, icon: WarningAmberIcon, tone: "warning" },
             { label: t("reports.metrics.activeTutors"), value: reporte.totalTutores, icon: TaskAltIcon }
         ];
     }
@@ -50,8 +51,9 @@ const getMetricas = (usuario, reporte, t) => {
         return [
             { label: t("reports.metrics.sessions"), value: reporte.totalTutorias, icon: AssessmentIcon },
             { label: t("reports.metrics.completed"), value: reporte.tutoriasCompletadas, icon: TaskAltIcon },
-            { label: t("reports.metrics.pending"), value: reporte.tutoriasPendientes, icon: WarningAmberIcon, tone: "warning" },
-            { label: t("reports.metrics.excuses"), value: reporte.totalJustificantes, icon: ArticleIcon }
+            { label: t("reports.metrics.tutoringPending"), value: reporte.tutoriasPendientes, icon: WarningAmberIcon, tone: "warning" },
+            { label: t("reports.metrics.excuses"), value: reporte.totalJustificantes, icon: ArticleIcon },
+            { label: t("reports.metrics.excusesPending"), value: reporte.justificantesPendientes, icon: WarningAmberIcon, tone: "warning" }
         ];
     }
 
@@ -59,8 +61,9 @@ const getMetricas = (usuario, reporte, t) => {
         return [
             { label: t("reports.metrics.students"), value: reporte.totalAlumnos, icon: GroupIcon },
             { label: t("reports.metrics.sessions"), value: reporte.totalTutorias, icon: AssessmentIcon },
-            { label: t("reports.metrics.pending"), value: reporte.tutoriasPendientes, icon: WarningAmberIcon, tone: "warning" },
-            { label: t("reports.metrics.excuses"), value: reporte.totalJustificantes, icon: ArticleIcon }
+            { label: t("reports.metrics.tutoringPending"), value: reporte.tutoriasPendientes, icon: WarningAmberIcon, tone: "warning" },
+            { label: t("reports.metrics.excuses"), value: reporte.totalJustificantes, icon: ArticleIcon },
+            { label: t("reports.metrics.excusesPending"), value: reporte.justificantesPendientes, icon: WarningAmberIcon, tone: "warning" }
         ];
     }
 
@@ -68,7 +71,7 @@ const getMetricas = (usuario, reporte, t) => {
         { label: t("reports.metrics.groups"), value: reporte.totalGrupos, icon: GroupIcon },
         { label: t("reports.metrics.students"), value: reporte.totalAlumnos, icon: SchoolIcon },
         { label: t("reports.metrics.sessions"), value: reporte.totalTutorias, icon: AssessmentIcon },
-        { label: t("reports.metrics.pending"), value: reporte.tutoriasPendientes, icon: WarningAmberIcon, tone: "warning" }
+        { label: t("reports.metrics.tutoringPending"), value: reporte.tutoriasPendientes, icon: WarningAmberIcon, tone: "warning" }
     ];
 };
 
@@ -101,9 +104,11 @@ function ListaDecision({ titulo, items }) {
                             <div className="reporte-list-values">
                                 {typeof item.totalAlumnos === "number" && <Chip label={`${t("reports.metrics.students")}: ${item.totalAlumnos}`} size="small" />}
                                 {typeof item.totalTutorias === "number" && <Chip label={`${t("reports.metrics.sessions")}: ${item.totalTutorias}`} size="small" />}
-                                {typeof item.tutoriasPendientes === "number" && <Chip label={`${t("reports.metrics.pending")}: ${item.tutoriasPendientes}`} size="small" className="reporte-chip-warning" />}
+                                {typeof item.tutoriasPendientes === "number" && <Chip label={`${t("reports.metrics.tutoringPending")}: ${item.tutoriasPendientes}`} size="small" className="reporte-chip-warning" />}
                                 {typeof item.totalJustificantes === "number" && <Chip label={`${t("reports.metrics.excuses")}: ${item.totalJustificantes}`} size="small" />}
                                 {typeof item.pendientes === "number" && <Chip label={`${t("reports.pendingExcusesShort")}: ${item.pendientes}`} size="small" className="reporte-chip-warning" />}
+                                {typeof item.aprobados === "number" && <Chip label={`${t("reports.pdf.approved")}: ${item.aprobados}`} size="small" color="success" variant="outlined" />}
+                                {typeof item.rechazados === "number" && <Chip label={`${t("reports.pdf.rejected")}: ${item.rechazados}`} size="small" variant="outlined" />}
                             </div>
                         </div>
                     ))}
@@ -114,7 +119,7 @@ function ListaDecision({ titulo, items }) {
 }
 
 function Reportes() {
-    const { formatDate, t } = useI18n();
+    const { formatDate, locale, t } = useI18n();
     const usuario = JSON.parse(localStorage.getItem("usuario"));
     const { reporte, loading } = useReportes(usuario);
 
@@ -122,18 +127,13 @@ function Reportes() {
     const avanceTutorias = porcentaje(reporte?.tutoriasCompletadas || 0, reporte?.totalTutorias || 0);
 
     const generarPDF = () => {
-        const elemento = document.getElementById("reporte-pdf");
-
-        html2pdf()
-            .set({
-                margin: 10,
-                filename: t("reports.fileName"),
-                image: { type: "jpeg", quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-            })
-            .from(elemento)
-            .save();
+        downloadReportPdf({
+            user: usuario,
+            report: reporte,
+            locale,
+            t,
+            translateText: (text) => translateReportText(t, text)
+        });
     };
 
     if (loading) {
@@ -182,7 +182,7 @@ function Reportes() {
                     </Button>
                 </section>
 
-                <Box id="reporte-pdf" className="reportes-pdf">
+                <Box className="reportes-pdf">
                     <Box className="reportes-pdf-header">
                         <Typography fontWeight="bold">{t("common.university").toUpperCase()}</Typography>
                         <Typography>{getRolReporte(usuario.id_rol, t)}</Typography>

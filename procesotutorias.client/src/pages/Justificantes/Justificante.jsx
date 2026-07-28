@@ -16,6 +16,13 @@ import InsertDriveFileRoundedIcon from "@mui/icons-material/InsertDriveFileRound
 import Alerta from "../../componentes/Alerta";
 import { useJustificante } from "../../hooks/useJustificante";
 import { useI18n } from "../../i18n/I18nContext";
+import { API_URL } from "../../api";
+import {
+    getLocalDateValue,
+    sanitizeMultiline,
+    validateDate,
+    validateFreeText
+} from "../../utils/validation";
 
 function Justificante({ open, usuario, data, onClose, onSaved }) {
     const { t } = useI18n();
@@ -33,20 +40,65 @@ function Justificante({ open, usuario, data, onClose, onSaved }) {
         mensaje: ""
     });
 
-    const { crear, aceptar, loading, BASE_URL } = useJustificante(() => {
+    const { crear, aceptar, loading } = useJustificante(() => {
         onSaved?.();
     });
 
+    const abrirArchivo = async (archivo) => {
+        const nombre = archivo?.split("/").pop();
+        if (!nombre) return;
+
+        const nuevaVentana = window.open("", "_blank");
+        if (nuevaVentana) nuevaVentana.opener = null;
+
+        try {
+            const response = await fetch(
+                `${API_URL}/Justificante/archivo/${encodeURIComponent(nombre)}`
+            );
+            if (response.status === 404) {
+                nuevaVentana?.close();
+                setPopup({
+                    open: true,
+                    loading: false,
+                    type: "error",
+                    titulo: t("excuses.fileNotFoundTitle"),
+                    mensaje: t("excuses.fileNotFoundMessage")
+                });
+                return;
+            }
+            if (!response.ok) throw new Error(t("common.requestFailed"));
+
+            const objectUrl = URL.createObjectURL(await response.blob());
+            if (nuevaVentana) {
+                nuevaVentana.location.href = objectUrl;
+            } else {
+                const enlace = document.createElement("a");
+                enlace.href = objectUrl;
+                enlace.target = "_blank";
+                enlace.rel = "noreferrer";
+                enlace.click();
+            }
+            window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+        } catch {
+            nuevaVentana?.close();
+            setPopup({
+                open: true,
+                loading: false,
+                type: "error",
+                titulo: t("common.error"),
+                mensaje: t("common.requestFailed")
+            });
+        }
+    };
+
     const validar = () => {
-        const nuevosErrores = {};
-
-        if (!form.descripcion.trim()) {
-            nuevosErrores.descripcion = t("excuses.descriptionRequired");
-        }
-
-        if (!form.fecha) {
-            nuevosErrores.fecha = t("excuses.dateRequired");
-        }
+        const nuevosErrores = {
+            descripcion: validateFreeText(form.descripcion, t, { maxLength: 1000 }),
+            fecha: validateDate(form.fecha, t, { max: getLocalDateValue() })
+        };
+        Object.keys(nuevosErrores).forEach((campo) => {
+            if (!nuevosErrores[campo]) delete nuevosErrores[campo];
+        });
 
         setErrores(nuevosErrores);
         return Object.keys(nuevosErrores).length === 0;
@@ -68,7 +120,7 @@ function Justificante({ open, usuario, data, onClose, onSaved }) {
         const ok = await crear(
             usuario,
             {
-                descripcion: form.descripcion.trim(),
+                descripcion: sanitizeMultiline(form.descripcion),
                 fecha: form.fecha
             },
             form.archivos
@@ -171,7 +223,10 @@ function Justificante({ open, usuario, data, onClose, onSaved }) {
                         <TextField
                             label={t("excuses.description")}
                             value={form.descripcion}
-                            onChange={(e) => setForm((prev) => ({ ...prev, descripcion: e.target.value }))}
+                            onChange={(e) => {
+                                setForm((prev) => ({ ...prev, descripcion: e.target.value }));
+                                setErrores((prev) => ({ ...prev, descripcion: "" }));
+                            }}
                             multiline
                             minRows={4}
                             fullWidth
@@ -179,21 +234,24 @@ function Justificante({ open, usuario, data, onClose, onSaved }) {
                             disabled={!esNuevo}
                             error={Boolean(errores.descripcion)}
                             helperText={errores.descripcion}
-                            inputProps={{ "aria-invalid": Boolean(errores.descripcion) }}
+                            inputProps={{ maxLength: 1000, "aria-invalid": Boolean(errores.descripcion) }}
                         />
 
                         <TextField
                             label={t("excuses.date")}
                             type="date"
                             value={form.fecha}
-                            onChange={(e) => setForm((prev) => ({ ...prev, fecha: e.target.value }))}
+                            onChange={(e) => {
+                                setForm((prev) => ({ ...prev, fecha: e.target.value }));
+                                setErrores((prev) => ({ ...prev, fecha: "" }));
+                            }}
                             fullWidth
                             required
                             disabled={!esNuevo}
                             error={Boolean(errores.fecha)}
                             helperText={errores.fecha}
                             InputLabelProps={{ shrink: true }}
-                            inputProps={{ "aria-invalid": Boolean(errores.fecha) }}
+                            inputProps={{ max: getLocalDateValue(), "aria-invalid": Boolean(errores.fecha) }}
                         />
 
                         {esNuevo && esAlumno && (
@@ -231,9 +289,8 @@ function Justificante({ open, usuario, data, onClose, onSaved }) {
                                 {archivos.map((archivo) => (
                                     <Button
                                         key={archivo}
-                                        href={`${BASE_URL}${archivo}`}
-                                        target="_blank"
-                                        rel="noreferrer"
+                                        type="button"
+                                        onClick={() => abrirArchivo(archivo)}
                                         variant="outlined"
                                         startIcon={<InsertDriveFileRoundedIcon />}
                                         className="justificante-file-link"
