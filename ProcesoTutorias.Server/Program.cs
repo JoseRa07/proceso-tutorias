@@ -11,6 +11,14 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Railway supplies the public port at runtime. Binding explicitly keeps local
+// development unchanged while making the container reachable in production.
+string? railwayPort = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrWhiteSpace(railwayPort))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{railwayPort}");
+}
+
 
 
 builder.Services.AddControllers(options =>
@@ -112,6 +120,7 @@ app.UseSwaggerUI();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.MapControllers();
 app.MapFallbackToFile("/index.html");
 
