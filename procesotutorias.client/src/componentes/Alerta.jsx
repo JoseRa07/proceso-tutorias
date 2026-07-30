@@ -11,6 +11,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 import WarningIcon from "@mui/icons-material/Warning";
 import InfoIcon from "@mui/icons-material/Info";
+import { useI18n } from "../i18n/I18nContext";
 
 const getIcon = (type) => {
     switch (type) {
@@ -30,6 +31,8 @@ function Alerta({
     titulo,
     mensaje
 }) {
+    const { t } = useI18n();
+
     return (
         <AnimatePresence>
             {open && (
@@ -42,7 +45,7 @@ function Alerta({
                             position: "fixed",
                             inset: 0,
                             backgroundColor: "#000",
-                            zIndex: 1000
+                            zIndex: 1500
                         }}
                         onClick={onClose}
                     />
@@ -57,7 +60,7 @@ function Alerta({
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            zIndex: 1001,
+                            zIndex: 1501,
                             padding: "16px"
                         }}
                     >
@@ -96,7 +99,7 @@ function Alerta({
 
                                 {!loading && (
                                     <Box width="100%" display="flex" justifyContent="flex-end">
-                                        <Button onClick={onClose}>OK</Button>
+                                        <Button onClick={onClose}>{t("common.ok")}</Button>
                                     </Box>
                                 )}
                             </Box>

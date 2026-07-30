@@ -1,0 +1,158 @@
+.acerca-cont {
+    width: 95vw;
+    min-height: calc(100vh - 120px);
+    margin: 0 auto 20px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.acerca-hero,
+.acerca-panel {
+    background: #fff;
+    border-radius: 10px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.acerca-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+    gap: 20px;
+    align-items: stretch;
+}
+
+.acerca-hero-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+}
+
+.acerca-eyebrow {
+    width: fit-content;
+    color: #1B5E20;
+    background: #eef7f1;
+    border-radius: 16px;
+    padding: 5px 12px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.acerca-title {
+    color: #121927;
+    max-width: 780px;
+}
+
+.acerca-desc {
+    color: #596170;
+    max-width: 760px;
+    line-height: 1.65;
+}
+
+.acerca-hero-card {
+    background: #121927;
+    color: #fff;
+    border-radius: 8px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+    min-height: 210px;
+}
+
+.acerca-hero-card svg {
+    color: #22d47b;
+    font-size: 42px;
+}
+
+.acerca-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 15px;
+}
+
+.acerca-card {
+    height: 100%;
+    border-radius: 8px !important;
+    border-left: 8px solid #20A85E;
+}
+
+.acerca-icon {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: #eef7f1;
+    color: #20A85E;
+    margin-bottom: 12px;
+}
+
+.acerca-card-text,
+.acerca-panel-text {
+    color: #596170;
+    line-height: 1.55;
+}
+
+.acerca-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 20px;
+    align-items: center;
+}
+
+.acerca-panel-title {
+    color: #121927;
+    margin-bottom: 6px;
+}
+
+.acerca-stack {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.acerca-stack svg {
+    color: #20A85E;
+}
+
+.acerca-chip {
+    background: #eef7f1 !important;
+    color: #1B5E20 !important;
+    font-weight: 600;
+}
+
+@media (max-width: 1000px) {
+    .acerca-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .acerca-cont {
+        padding: 10px;
+        gap: 10px;
+    }
+
+    .acerca-hero,
+    .acerca-panel {
+        grid-template-columns: 1fr;
+        padding: 18px;
+    }
+
+    .acerca-stack {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 520px) {
+    .acerca-grid {
+        grid-template-columns: 1fr;
+    }
+}

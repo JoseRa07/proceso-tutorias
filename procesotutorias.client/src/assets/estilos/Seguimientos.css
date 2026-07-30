@@ -1,0 +1,506 @@
+.main-content.seguimientos-layout-gradient {
+    padding-bottom: 0;
+    background:
+        linear-gradient(
+            to bottom,
+            #fff 0%,
+            #fff 54%,
+            rgba(34, 212, 123, 0.08) 76%,
+            rgba(34, 212, 123, 0.28) 100%
+        );
+}
+
+.main-content.seguimientos-layout-gradient + footer {
+    margin-top: 0;
+}
+
+.seguimientos-page {
+    width: 95vw;
+    min-height: calc(100vh - 120px);
+    margin: 0 auto 20px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.seguimientos-head,
+.seguimientos-content {
+    background: #fff;
+    border: 1px solid rgba(18, 25, 39, 0.06);
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.seguimientos-filters {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;
+    margin-bottom: 12px;
+}
+
+.seguimiento-filter-modal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: min(420px, 92vw);
+    transform: translate(-50%, -50%);
+    padding: 22px;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 16px 40px rgba(18, 25, 39, 0.26);
+    outline: none;
+}
+
+.seguimiento-filter-state-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.seguimiento-filter-state-options .MuiButton-contained,
+.seguimiento-filter-apply {
+    background: #20a85e !important;
+}
+
+.seguimiento-filter-state-options .MuiButton-contained:hover,
+.seguimiento-filter-apply:hover {
+    background: #1b5e20 !important;
+}
+
+.seguimiento-filter-apply {
+    margin-top: 20px !important;
+}
+
+.seguimientos-head {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    background:
+        linear-gradient(135deg, rgba(32, 168, 94, 0.12), rgba(255, 255, 255, 0) 48%),
+        #fff;
+}
+
+.seguimientos-eyebrow {
+    width: fit-content;
+    display: inline-flex;
+    margin-bottom: 8px;
+    padding: 5px 12px;
+    color: #1b5e20;
+    background: #eef7f1;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.seguimientos-title {
+    color: #121927;
+}
+
+.seguimientos-description {
+    max-width: 760px;
+    margin-top: 6px !important;
+    color: #596170;
+    line-height: 1.55 !important;
+}
+
+.seguimientos-head-icon {
+    width: 64px;
+    height: 64px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    background: #20a85e;
+    border-radius: 18px;
+    box-shadow: 0 12px 24px rgba(32, 168, 94, 0.24);
+}
+
+.seguimientos-head-icon svg {
+    font-size: 36px;
+}
+
+.seguimientos-content {
+    min-height: 360px;
+    padding: 20px;
+}
+
+.seguimientos-student-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.seguimiento-student-card {
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    border: 1px solid rgba(18, 25, 39, 0.08);
+    border-radius: 16px !important;
+    box-shadow: 0 5px 16px rgba(18, 25, 39, 0.08) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.seguimiento-student-card:hover {
+    border-color: rgba(32, 168, 94, 0.55);
+    box-shadow: 0 14px 28px rgba(32, 168, 94, 0.17) !important;
+    transform: translateY(-3px);
+}
+
+.seguimiento-student-action,
+.seguimiento-student-content {
+    width: 100%;
+    height: 100%;
+}
+
+.seguimiento-student-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    text-align: center;
+    background:
+        radial-gradient(circle at top, rgba(34, 212, 123, 0.11), transparent 46%),
+        #fff;
+}
+
+.seguimiento-avatar {
+    width: 72px !important;
+    height: 72px !important;
+    color: #fff !important;
+    background: linear-gradient(135deg, #22d47b, #167a42) !important;
+    box-shadow: 0 10px 20px rgba(32, 168, 94, 0.24);
+}
+
+.seguimiento-avatar svg {
+    font-size: 38px;
+}
+
+.seguimiento-student-main {
+    min-width: 0;
+    width: 100%;
+}
+
+.seguimiento-student-name {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    color: #121927;
+    line-height: 1.25 !important;
+}
+
+.seguimiento-student-meta,
+.seguimiento-last-activity {
+    color: #596170;
+}
+
+.seguimiento-student-counts {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.seguimiento-active-chip {
+    color: #116b38 !important;
+    background: #e8f8ef !important;
+    font-weight: 700 !important;
+}
+
+.seguimientos-feedback,
+.seguimientos-empty {
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 24px;
+    color: #596170;
+    text-align: center;
+}
+
+.seguimientos-feedback.error {
+    min-height: 180px;
+    color: #a12a2a;
+    background: #fff6f6;
+    border: 1px solid #f1c5c5;
+    border-radius: 12px;
+}
+
+.seguimientos-empty svg {
+    font-size: 54px;
+    color: #20a85e;
+}
+
+.seguimientos-empty.compact {
+    min-height: 220px;
+}
+
+.seguimiento-modal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: min(1060px, 95vw);
+    max-height: 92vh;
+    overflow: hidden;
+    transform: translate(-50%, -50%);
+    color: #121927;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 22px 55px rgba(18, 25, 39, 0.3);
+    outline: none;
+}
+
+.seguimiento-modal-header {
+    min-height: 76px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background:
+        linear-gradient(135deg, rgba(32, 168, 94, 0.16), rgba(255, 255, 255, 0) 56%),
+        #fff;
+    border-bottom: 1px solid rgba(18, 25, 39, 0.08);
+}
+
+.seguimiento-modal-body,
+.seguimiento-detail {
+    max-height: calc(92vh - 76px);
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.seguimiento-modal-error {
+    margin: 12px 20px 0;
+    padding: 10px 14px;
+    color: #a12a2a;
+    background: #fff1f1;
+    border: 1px solid #f2caca;
+    border-radius: 10px;
+}
+
+.seguimiento-case-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 14px;
+}
+
+.seguimiento-case-card {
+    min-height: 180px;
+    border: 1px solid rgba(18, 25, 39, 0.08);
+    border-left: 7px solid #20a85e;
+    border-radius: 14px !important;
+    box-shadow: 0 5px 16px rgba(18, 25, 39, 0.08) !important;
+}
+
+.seguimiento-case-card.status-finalizado {
+    border-left-color: #526579;
+}
+
+.seguimiento-case-card.status-cancelado {
+    border-left-color: #c64242;
+}
+
+.seguimiento-case-card .MuiCardActionArea-root,
+.seguimiento-case-content {
+    height: 100%;
+}
+
+.seguimiento-case-content {
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.seguimiento-case-description {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+}
+
+.seguimiento-case-footer {
+    margin-top: auto;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.seguimiento-status {
+    flex: 0 0 auto;
+    color: #126d3a !important;
+    background: #e7f8ef !important;
+    font-weight: 700 !important;
+}
+
+.seguimiento-status.status-finalizado {
+    color: #415263 !important;
+    background: #e9eef2 !important;
+}
+
+.seguimiento-status.status-cancelado {
+    color: #9d2929 !important;
+    background: #fdeaea !important;
+}
+
+.seguimiento-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.seguimiento-detail-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 14px;
+    background: #f7faf8;
+    border: 1px solid rgba(32, 168, 94, 0.13);
+    border-radius: 12px;
+}
+
+.seguimiento-state-control {
+    min-width: 170px !important;
+    flex: 0 0 auto;
+    background: #fff;
+}
+
+.seguimiento-session-viewer {
+    min-height: 430px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(18, 25, 39, 0.08);
+    border-radius: 14px;
+    background: #fff;
+}
+
+.seguimiento-session-content {
+    width: 100%;
+}
+
+.seguimiento-session-content .tutoria-titlebar {
+    padding-left: 58px;
+    padding-right: 58px;
+}
+
+.seguimiento-session-arrow {
+    position: absolute !important;
+    top: 20px;
+    z-index: 4;
+    color: #fff !important;
+    background: #20a85e !important;
+    box-shadow: 0 5px 14px rgba(18, 25, 39, 0.18);
+}
+
+.seguimiento-session-arrow:hover {
+    background: #1b5e20 !important;
+}
+
+.seguimiento-session-arrow.Mui-disabled {
+    color: rgba(18, 25, 39, 0.25) !important;
+    background: #edf0ee !important;
+}
+
+.seguimiento-session-arrow.previous {
+    left: 12px;
+}
+
+.seguimiento-session-arrow.next {
+    right: 12px;
+}
+
+.seguimiento-add-session {
+    min-height: 52px;
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    background: linear-gradient(135deg, #22d47b, #18894b) !important;
+    box-shadow: 0 10px 22px rgba(32, 168, 94, 0.24) !important;
+    font-weight: 700 !important;
+}
+
+.seguimiento-add-session:hover {
+    background: linear-gradient(135deg, #20bc6e, #146f3d) !important;
+}
+
+.seguimiento-add-session.Mui-disabled {
+    color: #6c7670 !important;
+    background: #e8ece9 !important;
+    box-shadow: none !important;
+}
+
+@media (max-width: 768px) {
+    .seguimientos-page {
+        padding: 10px;
+    }
+
+    .seguimientos-head {
+        align-items: flex-start;
+    }
+
+    .seguimientos-head-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 14px;
+    }
+
+    .seguimientos-student-grid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+
+    .seguimiento-modal {
+        width: 97vw;
+        max-height: 95vh;
+    }
+
+    .seguimiento-modal-body,
+    .seguimiento-detail {
+        max-height: calc(95vh - 76px);
+        padding: 12px;
+    }
+
+    .seguimiento-detail-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .seguimiento-state-control {
+        width: 100%;
+    }
+
+    .seguimiento-session-viewer {
+        min-height: 360px;
+    }
+}
+
+@media (max-width: 480px) {
+    .seguimientos-head-icon {
+        display: none;
+    }
+
+    .seguimientos-student-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .seguimiento-student-card {
+        aspect-ratio: auto;
+        min-height: 250px;
+    }
+
+    .seguimiento-case-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .seguimiento-modal-header {
+        padding: 12px;
+    }
+}

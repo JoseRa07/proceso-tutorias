@@ -1,8 +1,11 @@
 import { IconButton } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { motion as Motion, AnimatePresence } from "framer-motion";
+import { useI18n } from "../i18n/I18nContext";
 
 function Modal({ isOpen, onClose, children }) {
+    const { t } = useI18n();
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -57,6 +60,7 @@ function Modal({ isOpen, onClose, children }) {
                             {onClose && (
                                 <IconButton
                                     onClick={onClose}
+                                    aria-label={t("common.close")}
                                     sx={{
                                         position: "absolute",
                                         top: 10,

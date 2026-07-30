@@ -3,12 +3,21 @@ import { useNavigate } from "react-router-dom";
 import Modal from "../Modal";
 import "../../assets/estilos/login.css";
 import { API_URL } from "../../api";
+import { useI18n } from "../../i18n/I18nContext";
+import {
+    sanitizeSingleLine,
+    validateEmail,
+    validatePassword
+} from "../../utils/validation";
+import { storeAuthSession } from "../../auth/authFetch";
 
 function Login({ isOpen, onClose }) {
     const [correo, setCorreo] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const [fieldErrors, setFieldErrors] = useState({});
     const navigate = useNavigate();
+    const { t } = useI18n();
 
     if (!isOpen) return null;
 
@@ -16,8 +25,15 @@ function Login({ isOpen, onClose }) {
         e.preventDefault();
         setError("");
 
-        if (!correo.endsWith("@utnay.edu.mx")) {
-            setError("Solo se permiten correos institucionales (@utnay.edu.mx)");
+        const errors = {
+            correo: validateEmail(correo, t, { institutional: true }),
+            password: validatePassword(password, t, { minLength: 1 })
+        };
+        Object.keys(errors).forEach((field) => {
+            if (!errors[field]) delete errors[field];
+        });
+        setFieldErrors(errors);
+        if (Object.keys(errors).length > 0) {
             return;
         }
 
@@ -28,66 +44,78 @@ function Login({ isOpen, onClose }) {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    correo: correo,
+                    correo: sanitizeSingleLine(correo).toLowerCase(),
                     password: password,
                 }),
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                setError(errorData.message || "Credenciales incorrectas");
+                await response.json().catch(() => null);
+                setError(t("auth.invalidCredentials"));
                 return;
             }
 
             const data = await response.json();
-
-            localStorage.setItem("token", data.token);
-            localStorage.setItem("usuario", JSON.stringify(data.user));
+            storeAuthSession(data);
 
             navigate("/Panel");
             onClose();
         } catch (err) {
             console.error(err);
-            setError("Error al conectar con el servidor");
+            setError(t("auth.connectionError"));
         }
     };
 
     return (
         <Modal isOpen={isOpen} onClose={onClose}>
             <div className="derCont">
-                <h2>BIENVENIDO</h2>
-                <p id="sub">Por favor inicie sesión</p>
+                <h2>{t("auth.welcome")}</h2>
+                <p id="sub">{t("auth.signInPrompt")}</p>
 
                 <div className="formulario">
                     <form onSubmit={handleSubmit}>
-                        <label>Correo Electrónico:</label>
+                        <label>{t("auth.email")}:</label>
                         <input
                             type="email"
                             placeholder="ejemplo@utnay.edu.mx"
                             value={correo}
-                            onChange={(e) => setCorreo(e.target.value)}
+                            onChange={(e) => {
+                                setCorreo(e.target.value);
+                                setFieldErrors((current) => ({ ...current, correo: "" }));
+                            }}
                             required
+                            maxLength={254}
+                            aria-invalid={!!fieldErrors.correo}
+                            className={fieldErrors.correo ? "input-error" : ""}
                         />
+                        {fieldErrors.correo && <small className="field-error">{fieldErrors.correo}</small>}
 
-                        <label>Contraseña:</label>
+                        <label>{t("auth.password")}:</label>
                         <input
                             type="password"
-                            placeholder="Ingresa tu contraseña..."
+                            placeholder={t("auth.passwordPlaceholder")}
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={(e) => {
+                                setPassword(e.target.value);
+                                setFieldErrors((current) => ({ ...current, password: "" }));
+                            }}
                             required
+                            maxLength={72}
+                            aria-invalid={!!fieldErrors.password}
+                            className={fieldErrors.password ? "input-error" : ""}
                         />
+                        {fieldErrors.password && <small className="field-error">{fieldErrors.password}</small>}
 
                         <button type="submit">
-                            Iniciar Sesión
+                            {t("auth.signIn")}
                         </button>
                     </form>
 
                     {error && <p style={{ color: 'red', marginTop: '10px', fontWeight: 'bold' }}>{error}</p>}
 
                     <p>
-                        ¿Olvidaste tu contraseña?{" "}
-                        <a href="#">Recuperar contraseña</a>
+                        {t("auth.forgotPassword")}{" "}
+                        <a href="#">{t("auth.recoverPassword")}</a>
                     </p>
                 </div>
             </div>

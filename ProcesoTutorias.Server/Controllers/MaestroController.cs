@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProcesoTutorias.Server.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ProcesoTutorias.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "ADMIN")]
     public class MaestroController : ControllerBase
     {
         private readonly SistemaTutoriasContext _context;

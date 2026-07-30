@@ -21,6 +21,10 @@ public partial class Usuario
 
     public bool ReqCambioContra { get; set; }
 
+    public int SessionVersion { get; set; }
+
+    public virtual ICollection<AuthSession> AuthSessions { get; set; } = new List<AuthSession>();
+
     public virtual ICollection<Alumno> Alumnos { get; set; } = new List<Alumno>();
 
     public virtual Rol IdRolNavigation { get; set; } = null!;

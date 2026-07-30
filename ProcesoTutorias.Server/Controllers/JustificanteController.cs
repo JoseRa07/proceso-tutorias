@@ -2,18 +2,29 @@
 using Microsoft.EntityFrameworkCore;
 using ProcesoTutorias.Server.Models;
 using ProcesoTutorias.Server.DTOs;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using ProcesoTutorias.Server.Validation;
+using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.StaticFiles;
+using ProcesoTutorias.Server.Services;
 
 namespace ProcesoTutorias.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "ALUMNO,TUTOR")]
     public class JustificanteController : ControllerBase
     {
         private readonly SistemaTutoriasContext _context;
+        private readonly AuditLogService _auditLogService;
 
-        public JustificanteController(SistemaTutoriasContext context)
+        public JustificanteController(
+            SistemaTutoriasContext context,
+            AuditLogService auditLogService)
         {
             _context = context;
+            _auditLogService = auditLogService;
         }
 
         // =========================
@@ -28,6 +39,14 @@ namespace ProcesoTutorias.Server.Controllers
             int pagina = 1,
             int tam = 5)
         {
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out idUsuario))
+                return Unauthorized();
+            if (pagina < 1 || tam is < 1 or > 100)
+                return BadRequest(new { message = "[PAGINACION_INVALIDA] La página y el tamaño deben ser enteros positivos; el tamaño máximo es 100." });
+            if (idAlumno.HasValue && !InputSanitizer.IsPositiveId(idAlumno.Value))
+                return BadRequest(new { message = "[ALUMNO_INVALIDO] El alumno debe ser un entero mayor que cero." });
+
+            idRol = User.IsInRole("ALUMNO") ? 2 : 3;
             IQueryable<JustificanteDto> query;
 
             // ================= ALUMNO =================
@@ -99,8 +118,15 @@ namespace ProcesoTutorias.Server.Controllers
         // CREAR JUSTIFICANTE
         // =========================
         [HttpPost]
+        [Authorize(Roles = "ALUMNO")]
         public IActionResult Crear(int idUsuario, [FromBody] JustificanteReq dto)
         {
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out idUsuario))
+                return Unauthorized();
+            string? validationError = ValidarJustificante(dto);
+            if (validationError != null)
+                return BadRequest(new { message = validationError });
+
             var alumno = _context.Alumnos.FirstOrDefault(a => a.IdUsuario == idUsuario);
 
             if (alumno == null)
@@ -110,7 +136,7 @@ namespace ProcesoTutorias.Server.Controllers
             {
                 IdAlumno = alumno.IdAlumno,
                 Fecha = dto.Fecha,
-                Descripcion = dto.Descripcion,
+                Descripcion = InputSanitizer.NormalizeMultiline(dto.Descripcion),
                 Estado = "PENDIENTE",
                 FechaRegistro = DateTime.Now
             };
@@ -146,6 +172,7 @@ namespace ProcesoTutorias.Server.Controllers
         // ACEPTAR
         // =========================
         [HttpPut("aceptar/{id}")]
+        [Authorize(Roles = "TUTOR")]
         public IActionResult Aceptar(int id)
         {
             var j = _context.Justificantes.Find(id);
@@ -153,7 +180,13 @@ namespace ProcesoTutorias.Server.Controllers
             if (j == null)
                 return NotFound();
 
+            string previousState = j.Estado;
             j.Estado = "ACEPTADO";
+            _auditLogService.Record(
+                "JUSTIFICANTE_ACEPTADO",
+                "Justificante",
+                id,
+                $"Estado cambiado de {previousState} a ACEPTADO.");
             _context.SaveChanges();
 
             return Ok();
@@ -163,14 +196,19 @@ namespace ProcesoTutorias.Server.Controllers
         // EDITAR
         // =========================
         [HttpPut("{id}")]
+        [Authorize(Roles = "ALUMNO")]
         public IActionResult Editar(int id, [FromBody] JustificanteReq dto)
         {
+            string? validationError = ValidarJustificante(dto);
+            if (validationError != null)
+                return BadRequest(new { message = validationError });
+
             var j = _context.Justificantes.Find(id);
 
             if (j == null)
                 return NotFound();
 
-            j.Descripcion = dto.Descripcion;
+            j.Descripcion = InputSanitizer.NormalizeMultiline(dto.Descripcion);
             j.Fecha = dto.Fecha;
 
             _context.SaveChanges();
@@ -182,6 +220,7 @@ namespace ProcesoTutorias.Server.Controllers
         // ELIMINAR (LOGICO)
         // =========================
         [HttpDelete("{id}")]
+        [Authorize(Roles = "ALUMNO")]
         public IActionResult Eliminar(int id)
         {
             var j = _context.Justificantes.Find(id);
@@ -189,7 +228,13 @@ namespace ProcesoTutorias.Server.Controllers
             if (j == null)
                 return NotFound();
 
+            string previousState = j.Estado;
             j.Estado = "INACTIVO";
+            _auditLogService.Record(
+                "JUSTIFICANTE_ELIMINADO",
+                "Justificante",
+                id,
+                $"Estado cambiado de {previousState} a INACTIVO.");
             _context.SaveChanges();
 
             return Ok();
@@ -199,11 +244,14 @@ namespace ProcesoTutorias.Server.Controllers
         // UPLOAD ARCHIVOS
         // =========================
         [HttpPost("upload")]
+        [Authorize(Roles = "ALUMNO")]
         [RequestSizeLimit(50 * 1024 * 1024)]
         public IActionResult SubirArchivos([FromForm] List<IFormFile> files)
         {
             if (files == null || files.Count == 0)
                 return BadRequest("No se enviaron archivos");
+            if (files.Count > 10)
+                return BadRequest(new { message = "[ARCHIVOS_LIMITE] Se permiten como máximo 10 archivos." });
 
             string carpeta = @"C:\justificantes\";
 
@@ -214,9 +262,12 @@ namespace ProcesoTutorias.Server.Controllers
 
             foreach (var file in files)
             {
+                if (file.Length <= 0 || file.Length > 10 * 1024 * 1024)
+                    return BadRequest(new { message = "[ARCHIVO_TAMANO_INVALIDO] Cada archivo debe pesar entre 1 byte y 10 MB." });
+
                 var ext = Path.GetExtension(file.FileName).ToLower();
 
-                var validos = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+                var validos = new[] { ".jpg", ".jpeg", ".png", ".webp", ".pdf" };
 
                 if (!validos.Contains(ext))
                     return BadRequest("Tipo no permitido");
@@ -231,6 +282,75 @@ namespace ProcesoTutorias.Server.Controllers
             }
 
             return Ok(urls);
+        }
+
+        [HttpGet("archivo/{nombre}")]
+        [Authorize(Roles = "ALUMNO,TUTOR")]
+        public async Task<IActionResult> DescargarArchivo(string nombre)
+        {
+            if (string.IsNullOrWhiteSpace(nombre) ||
+                nombre.Length > 100 ||
+                Path.GetFileName(nombre) != nombre)
+            {
+                return BadRequest(new { message = "[JUSTIFICANTE_ARCHIVO_INVALIDO] El archivo solicitado no es válido." });
+            }
+
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int idUsuario))
+                return Unauthorized();
+
+            string storedUrl = $"/justificantes/{nombre}";
+            var archivo = await _context.JustificanteArchivos
+                .AsNoTracking()
+                .Include(item => item.IdJustificanteNavigation)
+                    .ThenInclude(item => item.IdAlumnoNavigation)
+                        .ThenInclude(item => item.IdGrupoNavigation)
+                            .ThenInclude(item => item.IdTutorNavigation)
+                                .ThenInclude(item => item!.IdMaestroNavigation)
+                .FirstOrDefaultAsync(item => item.Url == storedUrl);
+
+            if (archivo == null)
+                return NotFound();
+
+            var alumno = archivo.IdJustificanteNavigation.IdAlumnoNavigation;
+            bool autorizado = User.IsInRole("ALUMNO")
+                ? alumno.IdUsuario == idUsuario
+                : User.IsInRole("TUTOR") &&
+                  alumno.IdGrupoNavigation.IdTutorNavigation?.IdMaestroNavigation.IdUsuario == idUsuario;
+
+            if (!autorizado)
+                return Forbid();
+
+            string fullPath = Path.Combine(@"C:\justificantes", nombre);
+            if (!System.IO.File.Exists(fullPath))
+                return NotFound();
+
+            var contentTypes = new FileExtensionContentTypeProvider();
+            if (!contentTypes.TryGetContentType(nombre, out string? contentType))
+                contentType = "application/octet-stream";
+
+            return PhysicalFile(fullPath, contentType, enableRangeProcessing: true);
+        }
+
+        private static string? ValidarJustificante(JustificanteReq dto)
+        {
+            if (dto.Fecha == default || dto.Fecha > DateOnly.FromDateTime(DateTime.Today))
+                return "[JUSTIFICANTE_FECHA_INVALIDA] La fecha es obligatoria y no puede ser futura.";
+
+            string? descriptionError = InputSanitizer.ValidateFreeText(dto.Descripcion, "La descripción", 1000);
+            if (descriptionError != null)
+                return descriptionError;
+
+            if (dto.Archivos?.Any(url =>
+                    string.IsNullOrWhiteSpace(url) ||
+                    !Regex.IsMatch(
+                        url,
+                        @"^/justificantes/[a-fA-F0-9-]+\.(jpg|jpeg|png|webp|pdf)$",
+                        RegexOptions.CultureInvariant)) == true)
+            {
+                return "[JUSTIFICANTE_ARCHIVO_INVALIDO] La referencia de un archivo no es válida.";
+            }
+
+            return null;
         }
     }
 }

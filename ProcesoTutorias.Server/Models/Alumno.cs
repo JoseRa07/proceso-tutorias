@@ -19,5 +19,7 @@ public partial class Alumno
 
     public virtual ICollection<Justificante> Justificantes { get; set; } = new List<Justificante>();
 
+    public virtual ICollection<Seguimiento> Seguimientos { get; set; } = new List<Seguimiento>();
+
     public virtual ICollection<Tutorium> Tutoria { get; set; } = new List<Tutorium>();
 }

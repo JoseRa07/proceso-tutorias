@@ -10,6 +10,7 @@ export const useReportes = (usuario) => {
 
         const cargarReporte = async () => {
             setLoading(true);
+            const token = localStorage.getItem("token");
 
             let url = "";
 
@@ -19,7 +20,10 @@ export const useReportes = (usuario) => {
             if (usuario.id_rol === 4) url = `${API_URL}/Reportes/maestro/${usuario.id_usuario}`;
 
             try {
-                const res = await fetch(url);
+                const res = await fetch(url, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
                 setReporte(data);
             } catch (e) {

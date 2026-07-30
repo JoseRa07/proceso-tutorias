@@ -1,93 +1,246 @@
-import React, { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Checkbox,
+    FormControl,
+    FormControlLabel,
+    InputLabel,
+    MenuItem,
+    Select,
+    TextField,
+    Typography
+} from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
+import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
+import PersonOffIcon from "@mui/icons-material/PersonOff";
+import SaveIcon from "@mui/icons-material/Save";
+
+import Layout from "../../componentes/layout";
+import Alerta from "../../componentes/Alerta";
+import { useAdminCatalogos, useAdminTutores } from "../../hooks/useAdministracion";
+import "../../assets/estilos/Administracion.css";
+import { useI18n } from "../../i18n/I18nContext";
+import {
+    sanitizeSingleLine,
+    validateDate,
+    validateFreeText,
+    validateIdentifier,
+    validatePositiveInteger
+} from "../../utils/validation";
+
+const hoy = new Date().toISOString().split("T")[0];
+
+const inicial = {
+    idMaestro: null,
+    idUsuario: "",
+    codEmpleado: "",
+    vigencia: hoy,
+    activarComoTutor: true
+};
 
 function GestionTutores() {
-    const [tutores, setTutores] = useState([]);
-    // Ajustado a tu modelo: id_usuario y cod_empleado
-    const [nuevoTutor, setNuevoTutor] = useState({ id_usuario: '', cod_empleado: '' });
+    const { formatDate, locale, t } = useI18n();
+    const navigate = useNavigate();
+    const usuario = JSON.parse(localStorage.getItem("usuario"));
+    const { candidatosTutor, cargarCandidatosTutor } = useAdminCatalogos();
+    const { tutores, loading, error, cargarTutores, requestAdmin } = useAdminTutores();
+    const [form, setForm] = useState(inicial);
+    const [filtro, setFiltro] = useState("");
+    const [fieldErrors, setFieldErrors] = useState({});
+    const [popup, setPopup] = useState({ open: false, loading: false, type: "info", titulo: "", mensaje: "" });
 
-    useEffect(() => {
-        fetch('http://localhost:5016/api/Maestro')
-            .then(res => res.json())
-            .then(data => setTutores(data))
-            .catch(err => console.error("Error al cargar:", err));
+    const mostrar = useCallback((type, titulo, mensaje) => {
+        setPopup({ open: true, loading: false, type, titulo, mensaje });
     }, []);
 
-    const guardarTutor = async () => {
-        if (!nuevoTutor.id_usuario || !nuevoTutor.cod_empleado.trim()) {
-            alert("⚠️ Por favor, completa el ID de Usuario y el Código de Empleado.");
-            return;
-        }
+    useEffect(() => {
+        if (!usuario) navigate("/");
+        if (usuario && usuario.id_rol !== 1) navigate("/Panel");
+    }, [usuario, navigate]);
+
+    const actualizarForm = (campo, valor) => {
+        setForm({ ...form, [campo]: valor });
+        setFieldErrors({ ...fieldErrors, [campo]: "" });
+    };
+
+    const limpiar = () => {
+        setForm(inicial);
+        setFieldErrors({});
+    };
+
+    const validar = () => {
+        const errores = {
+            idUsuario: !form.idMaestro ? validatePositiveInteger(form.idUsuario, t) : "",
+            codEmpleado: validateIdentifier(form.codEmpleado, t, { maxLength: 30 }),
+            vigencia: validateDate(form.vigencia, t, { min: hoy })
+        };
+        Object.keys(errores).forEach((campo) => {
+            if (!errores[campo]) delete errores[campo];
+        });
+        setFieldErrors(errores);
+        return Object.keys(errores).length === 0;
+    };
+
+    const guardar = async (event) => {
+        event.preventDefault();
+        if (!validar()) return;
 
         try {
-            const response = await fetch('http://localhost:5016/api/Maestro', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    // Estos nombres deben ser EXACTOS a tu archivo Maestro.cs
-                    id_usuario: parseInt(nuevoTutor.id_usuario),
-                    cod_empleado: nuevoTutor.cod_empleado,
-                    vigencia: new Date().toISOString().split('T')[0] // Genera la fecha actual (YYYY-MM-DD)
-                })
-            });
-
-            if (response.ok) {
-                alert("✅ Maestro registrado con éxito.");
-                window.location.reload();
+            if (form.idMaestro) {
+                await requestAdmin(`/Tutores/${form.idMaestro}`, {
+                    method: "PUT",
+                    body: JSON.stringify({
+                        codEmpleado: sanitizeSingleLine(form.codEmpleado),
+                        vigencia: form.vigencia
+                    })
+                });
             } else {
-                const errorData = await response.text();
-                alert("❌ Error del servidor: " + errorData);
+                await requestAdmin("/Tutores", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        idUsuario: Number(form.idUsuario),
+                        codEmpleado: sanitizeSingleLine(form.codEmpleado),
+                        vigencia: form.vigencia,
+                        activarComoTutor: form.activarComoTutor
+                    })
+                });
             }
-        } catch (error) {
-            console.error("Error de conexión:", error);
-            alert("🚀 Error de conexión con el backend.");
+
+            await Promise.all([cargarTutores(filtro), cargarCandidatosTutor()]);
+            limpiar();
+            mostrar("success", t("administration.tutors.savedTitle"), t("administration.tutors.savedMessage"));
+        } catch (err) {
+            mostrar("error", t("administration.saveFailed"), locale === "es-MX" ? err.message : t("common.requestFailed"));
         }
     };
 
+    const editar = (item) => {
+        setForm({
+            idMaestro: item.idMaestro,
+            idUsuario: item.idUsuario,
+            codEmpleado: item.codEmpleado,
+            vigencia: item.vigencia,
+            activarComoTutor: item.esTutor
+        });
+        setFieldErrors({});
+    };
+
+    const activar = async (item) => {
+        try {
+            await requestAdmin(`/Tutores/${item.idMaestro}/activar`, { method: "PUT" });
+            await cargarTutores(filtro);
+            mostrar("success", t("administration.tutors.activatedTitle"), t("administration.tutors.activatedMessage"));
+        } catch (err) {
+            mostrar("error", t("administration.tutors.activateFailed"), locale === "es-MX" ? err.message : t("common.requestFailed"));
+        }
+    };
+
+    const desactivar = async (item) => {
+        try {
+            await requestAdmin(`/Tutores/${item.idTutor}/desactivar`, { method: "PUT" });
+            await cargarTutores(filtro);
+            mostrar("success", t("administration.tutors.deactivatedTitle"), t("administration.tutors.deactivatedMessage"));
+        } catch (err) {
+            mostrar("warning", t("administration.tutors.deactivateFailed"), locale === "es-MX" ? err.message : t("common.requestFailed"));
+        }
+    };
+
+    const buscar = async (event) => {
+        event.preventDefault();
+        const filterError = validateFreeText(filtro, t, { required: false, maxLength: 100 });
+        setFieldErrors((current) => ({ ...current, filtro: filterError }));
+        if (filterError) return;
+        await cargarTutores(sanitizeSingleLine(filtro));
+    };
+
     return (
-        <div style={{ padding: '20px' }}>
-            <h2>Gestión de Maestros / Tutores</h2>
-            <div style={{ marginBottom: '20px', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
-                <h3>Registrar Nuevo Maestro</h3>
-                <input
-                    type="number"
-                    placeholder="ID de Usuario (Ej. 1)"
-                    style={{ padding: '8px', marginRight: '10px' }}
-                    value={nuevoTutor.id_usuario}
-                    onChange={(e) => setNuevoTutor({ ...nuevoTutor, id_usuario: e.target.value })}
-                />
-                <input
-                    type="text"
-                    placeholder="Código de Empleado (Ej. EMP001)"
-                    style={{ padding: '8px', marginRight: '10px' }}
-                    value={nuevoTutor.cod_empleado}
-                    onChange={(e) => setNuevoTutor({ ...nuevoTutor, cod_empleado: e.target.value })}
-                />
-                <button onClick={guardarTutor} style={{ padding: '8px 20px', cursor: 'pointer' }}>
-                    Guardar Maestro
-                </button>
+        <Layout contentClassName="admin-layout-gradient">
+            <div className="admin-cont">
+                <div className="admin-head">
+                    <Typography variant="h6" fontWeight="bold">{t("administration.tutors.title")}</Typography>
+                    <Button startIcon={<AddIcon />} onClick={limpiar}>{t("administration.tutors.new")}</Button>
+                </div>
+
+                <div className="admin-grid">
+                    <div className="admin-panel">
+                        <form className="admin-form" onSubmit={guardar}>
+                            <Typography fontWeight="bold">{form.idMaestro ? t("administration.tutors.update") : t("administration.tutors.register")}</Typography>
+                            {!form.idMaestro && (
+                                <FormControl required error={!!fieldErrors.idUsuario}>
+                                    <InputLabel>{t("administration.tutors.user")}</InputLabel>
+                                    <Select label={t("administration.tutors.user")} value={form.idUsuario} onChange={(e) => actualizarForm("idUsuario", e.target.value)}>
+                                        {candidatosTutor.map((item) => (
+                                            <MenuItem key={item.idUsuario} value={item.idUsuario}>
+                                                {item.nombreCompleto} - {item.correo}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                    {fieldErrors.idUsuario && <Typography color="error" fontSize={12} mt={0.5}>{fieldErrors.idUsuario}</Typography>}
+                                </FormControl>
+                            )}
+                            <TextField label={t("administration.tutors.employeeCode")} value={form.codEmpleado} onChange={(e) => actualizarForm("codEmpleado", e.target.value)} required error={!!fieldErrors.codEmpleado} helperText={fieldErrors.codEmpleado} inputProps={{ maxLength: 30, "aria-invalid": !!fieldErrors.codEmpleado }} />
+                            <TextField label={t("administration.tutors.validUntil")} type="date" value={form.vigencia} onChange={(e) => actualizarForm("vigencia", e.target.value)} required error={!!fieldErrors.vigencia} helperText={fieldErrors.vigencia} InputLabelProps={{ shrink: true }} inputProps={{ min: hoy, "aria-invalid": !!fieldErrors.vigencia }} />
+                            {!form.idMaestro && (
+                                <FormControlLabel
+                                    control={<Checkbox checked={form.activarComoTutor} onChange={(e) => actualizarForm("activarComoTutor", e.target.checked)} />}
+                                    label={t("administration.tutors.enableTutor")}
+                                />
+                            )}
+                            <Button type="submit" variant="contained" startIcon={<SaveIcon />} sx={{ backgroundColor: "#20A85E" }}>{t("administration.tutors.save")}</Button>
+                        </form>
+                    </div>
+
+                    <div className="admin-panel">
+                        {error && <Box className="admin-empty">{error}</Box>}
+                        <Box component="form" className="admin-actions" onSubmit={buscar} mb={1}>
+                            <TextField size="small" label={t("common.search")} value={filtro} onChange={(e) => { setFiltro(e.target.value); setFieldErrors((current) => ({ ...current, filtro: "" })); }} error={!!fieldErrors.filtro} helperText={fieldErrors.filtro} inputProps={{ maxLength: 100, "aria-invalid": !!fieldErrors.filtro }} />
+                            <Button type="submit">{t("administration.filter")}</Button>
+                        </Box>
+
+                        <div className="admin-lista">
+                            {loading ? (
+                                <Box className="admin-empty">{t("administration.loading")}</Box>
+                            ) : tutores.length === 0 ? (
+                                <Box className="admin-empty">{t("administration.tutors.empty")}</Box>
+                            ) : tutores.map((item) => (
+                                <Card key={item.idMaestro} className={`admin-item ${item.esTutor ? "" : "inactivo"}`}>
+                                    <CardContent sx={{ padding: "10px !important" }}>
+                                        <div className="admin-row">
+                                            <Box>
+                                                <Typography fontWeight="bold">{item.nombreCompleto}</Typography>
+                                                <div className="admin-meta">
+                                                    <span>{item.correo}</span>
+                                                    <span>{item.codEmpleado}</span>
+                                                    <span>{t("administration.tutors.validUntil")}: {formatDate(item.vigencia)}</span>
+                                                    <span className={`admin-chip ${item.esTutor ? "" : "warning"}`}>{item.esTutor ? t("administration.tutors.tutor") : t("administration.tutors.teacher")}</span>
+                                                    <span>{t("administration.tutors.groups")}: {item.totalGrupos}</span>
+                                                    <span>{t("administration.tutors.sessions")}: {item.totalTutorias}</span>
+                                                </div>
+                                            </Box>
+                                            <Box>
+                                                <Button startIcon={<EditIcon />} onClick={() => editar(item)}>{t("common.edit")}</Button>
+                                                {item.esTutor ? (
+                                                    <Button color="warning" startIcon={<PersonOffIcon />} onClick={() => desactivar(item)}>{t("administration.tutors.deactivate")}</Button>
+                                                ) : (
+                                                    <Button startIcon={<PersonAddAlt1Icon />} onClick={() => activar(item)}>{t("administration.tutors.activate")}</Button>
+                                                )}
+                                            </Box>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <table border="1" width="100%" style={{ borderCollapse: 'collapse' }}>
-                <thead>
-                    <tr style={{ backgroundColor: '#f0f0f0' }}>
-                        <th>ID Maestro</th>
-                        <th>ID Usuario</th>
-                        <th>Código Empleado</th>
-                        <th>Vigencia</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {tutores.map((t, i) => (
-                        <tr key={i}>
-                            <td>{t.id_maestro}</td>
-                            <td>{t.id_usuario}</td>
-                            <td>{t.cod_empleado}</td>
-                            <td>{t.vigencia}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
+            <Alerta open={popup.open} loading={popup.loading} type={popup.type} titulo={popup.titulo} mensaje={popup.mensaje} onClose={() => setPopup({ ...popup, open: false })} />
+        </Layout>
     );
 }
 

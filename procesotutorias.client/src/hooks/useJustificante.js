@@ -1,33 +1,43 @@
 import { useState } from "react";
 import { API_URL } from "../api";
+import { useI18n } from "../i18n/I18nContext";
 
 export const useJustificante = (onSuccess) => {
+    const { t } = useI18n();
     const [loading, setLoading] = useState(false);
-    const token = localStorage.getItem("token");
+
+    const getAuthHeaders = (contentType = "application/json") => {
+        const token = localStorage.getItem("token");
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+        if (contentType) {
+            headers["Content-Type"] = contentType;
+        }
+
+        return headers;
+    };
 
     const crear = async (usuario, data, archivos) => {
         try {
-            setLoading(true);
-            let urls = [];
-            if (archivos && archivos.length > 0) {
-                urls = await subirArchivo(archivos);
-            }
+            if (!usuario?.id_usuario) throw new Error(t("excuses.invalidUser"));
 
+            setLoading(true);
+
+            const urls = archivos?.length ? await subirArchivo(archivos) : [];
             const payload = { ...data, archivos: urls };
 
             const res = await fetch(`${API_URL}/Justificante?idUsuario=${usuario.id_usuario}`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
+                headers: getAuthHeaders(),
                 body: JSON.stringify(payload)
             });
 
-            if (!res.ok) throw new Error();
-            if (onSuccess) onSuccess();
+            if (!res.ok) throw new Error(t("excuses.sendErrorTitle"));
+
+            onSuccess?.();
             return true;
-        } catch {
+        } catch (error) {
+            console.log(error);
             return false;
         } finally {
             setLoading(false);
@@ -37,17 +47,19 @@ export const useJustificante = (onSuccess) => {
     const editar = async (id, data) => {
         try {
             setLoading(true);
-            await fetch(`${API_URL}/Justificante/${id}`, {
+
+            const res = await fetch(`${API_URL}/Justificante/${id}`, {
                 method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
+                headers: getAuthHeaders(),
                 body: JSON.stringify(data)
             });
-            if (onSuccess) onSuccess();
+
+            if (!res.ok) throw new Error(t("excuses.updateErrorTitle"));
+
+            onSuccess?.();
             return true;
-        } catch {
+        } catch (error) {
+            console.log(error);
             return false;
         } finally {
             setLoading(false);
@@ -57,13 +69,18 @@ export const useJustificante = (onSuccess) => {
     const eliminar = async (id) => {
         try {
             setLoading(true);
-            await fetch(`${API_URL}/Justificante/${id}`, {
+
+            const res = await fetch(`${API_URL}/Justificante/${id}`, {
                 method: "DELETE",
-                headers: { "Authorization": `Bearer ${token}` }
+                headers: getAuthHeaders(null)
             });
-            if (onSuccess) onSuccess();
+
+            if (!res.ok) throw new Error(t("common.requestFailed"));
+
+            onSuccess?.();
             return true;
-        } catch {
+        } catch (error) {
+            console.log(error);
             return false;
         } finally {
             setLoading(false);
@@ -73,13 +90,18 @@ export const useJustificante = (onSuccess) => {
     const aceptar = async (id) => {
         try {
             setLoading(true);
-            await fetch(`${API_URL}/Justificante/aceptar/${id}`, {
+
+            const res = await fetch(`${API_URL}/Justificante/aceptar/${id}`, {
                 method: "PUT",
-                headers: { "Authorization": `Bearer ${token}` }
+                headers: getAuthHeaders(null)
             });
-            if (onSuccess) onSuccess();
+
+            if (!res.ok) throw new Error(t("excuses.updateErrorTitle"));
+
+            onSuccess?.();
             return true;
-        } catch {
+        } catch (error) {
+            console.log(error);
             return false;
         } finally {
             setLoading(false);
@@ -88,19 +110,20 @@ export const useJustificante = (onSuccess) => {
 
     const subirArchivo = async (files) => {
         if (!files || files.length === 0) return [];
+
         const formData = new FormData();
-        for (let i = 0; i < files.length; i++) {
-            formData.append("files", files[i]);
-        }
+        Array.from(files).forEach((file) => formData.append("files", file));
+
         const res = await fetch(`${API_URL}/Justificante/upload`, {
             method: "POST",
-            headers: { "Authorization": `Bearer ${token}` },
+            headers: getAuthHeaders(null),
             body: formData
         });
-        if (!res.ok) throw new Error();
+
+        if (!res.ok) throw new Error(t("common.requestFailed"));
+
         return await res.json();
     };
 
-    const BASE_URL = "http://localhost:5016";
-    return { crear, editar, eliminar, aceptar, subirArchivo, loading, BASE_URL };
+    return { crear, editar, eliminar, aceptar, subirArchivo, loading };
 };

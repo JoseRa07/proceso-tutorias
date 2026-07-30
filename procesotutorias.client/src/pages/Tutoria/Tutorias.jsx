@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import Layout from "../../componentes/layout";
 import "../../assets/estilos/Tutorias.css";
@@ -24,44 +24,39 @@ import FilterListIcon from "@mui/icons-material/FilterAltRounded";
 import Arrow from "@mui/icons-material/ArrowForwardIosRounded";
 
 import { useTutorias } from "../../hooks/useTutorias";
+import Tutoria from "./Tutoria";
+import { useI18n } from "../../i18n/I18nContext";
 
 function Tutorias() {
-
     const navigate = useNavigate();
+    const location = useLocation();
+    const { formatDate, t } = useI18n();
 
-    // usuario desde local storage
     const [usuario] = useState(() => {
         const u = localStorage.getItem("usuario");
         return u ? JSON.parse(u) : null;
     });
+    const solicitudInicial = usuario?.id_rol === 3
+        ? location.state?.crearTutoria || null
+        : null;
+    const idTutoriaInicial = Number(location.state?.abrirTutoriaId);
+    const detalleInicial = Number.isInteger(idTutoriaInicial) && idTutoriaInicial > 0
+        ? idTutoriaInicial
+        : null;
 
-    useEffect(() => {
-        if (!usuario) {
-            navigate("/");
-            return;
-        }
-
-        // SOLO alumno o tutor
-        const rolesPermitidos = [2, 3];
-
-        if (!rolesPermitidos.includes(usuario.id_rol)) {
-            navigate("/panel");
-        }
-
-    }, [usuario, navigate]);
-
-    // abrir modal de filtros
     const [openFiltro, setOpenFiltro] = useState(false);
+    const [openTutoria, setOpenTutoria] = useState(
+        () => Boolean(solicitudInicial || detalleInicial)
+    );
+    const [tutoriaSeleccionada, setTutoriaSeleccionada] = useState(detalleInicial);
+    const [tutoriaInicial, setTutoriaInicial] = useState(solicitudInicial);
+    const [refreshKey, setRefreshKey] = useState(0);
 
-    // filtros temporales
     const [estadoTemp, setEstadoTemp] = useState(null);
     const [alumnoTemp, setAlumnoTemp] = useState("");
-
-    // filtros aplicados
     const [estado, setEstado] = useState(null);
     const [alumnoId, setAlumnoId] = useState("");
 
-    // alerta global
     const [popup, setPopup] = useState({
         open: false,
         loading: false,
@@ -70,23 +65,39 @@ function Tutorias() {
         mensaje: ""
     });
 
-    // peticion de tutorias
+    useEffect(() => {
+        if (!usuario) {
+            navigate("/");
+            return;
+        }
+
+        const rolesPermitidos = [2, 3];
+
+        if (!rolesPermitidos.includes(usuario.id_rol)) {
+            navigate("/panel");
+        }
+    }, [usuario, navigate]);
+
+    useEffect(() => {
+        if (!solicitudInicial && !detalleInicial) return;
+        navigate(location.pathname, { replace: true, state: null });
+    }, [detalleInicial, location.pathname, navigate, solicitudInicial]);
+
     const { tutorias, loading, alumnos } = useTutorias(
         usuario,
         estado,
         alumnoId,
-        setPopup
+        setPopup,
+        refreshKey
     );
 
-    // seguridad si no hay usuario
     if (!usuario) {
         navigate("/");
         return null;
     }
 
-    // clase segun estado de tutoria
-    const getClaseEstado = (estado) => {
-        switch (estado) {
+    const getClaseEstado = (estadoTutoria) => {
+        switch (estadoTutoria) {
             case "PENDIENTE": return "tutoria-pendiente";
             case "COMPLETADA": return "tutoria-completada";
             case "EDICION": return "tutoria-edicion";
@@ -94,26 +105,57 @@ function Tutorias() {
         }
     };
 
+    const abrirTutoria = (idSesion = null) => {
+        setTutoriaSeleccionada(idSesion);
+        setTutoriaInicial(null);
+        setOpenTutoria(true);
+    };
+
+    const cerrarTutoria = () => {
+        setOpenTutoria(false);
+        setTutoriaSeleccionada(null);
+        setTutoriaInicial(null);
+    };
+
+    const completarTutoria = (notification) => {
+        cerrarTutoria();
+        setRefreshKey(prev => prev + 1);
+
+        if (notification) {
+            setPopup({
+                open: true,
+                loading: false,
+                type: notification.type,
+                titulo: notification.titulo,
+                mensaje: notification.mensaje
+            });
+        }
+    };
+
     return (
-        <Layout>
-
-            {/* contenedor general */}
+        <Layout contentClassName="tutorias-layout-gradient">
             <div className="tutorias-cont">
-
-                {/* header principal */}
                 <div className="tutorias-head">
-                    <Typography variant="h6" fontWeight="bold">
-                        {usuario.id_rol === 2 ? "Historial de tutorías" : "Gestión de tutorías"}
-                    </Typography>
+                    <Box>
+                        <Typography component="span" className="tutorias-eyebrow">
+                            {t("tutoring.eyebrow")}
+                        </Typography>
+                        <Typography variant="h5" fontWeight="bold" className="tutorias-title">
+                            {usuario.id_rol === 2 ? t("tutoring.historyTitle") : t("tutoring.managementTitle")}
+                        </Typography>
+                        <Typography className="tutorias-desc">
+                            {t("tutoring.description")}
+                        </Typography>
+                    </Box>
 
-                    {/* boton nueva tutoria (solo admin/tutor) */}
                     {usuario.id_rol !== 2 && (
                         <Box display="flex" alignItems="center" gap={1}>
-                            <Typography>Nueva tutoría</Typography>
+                            <Typography>{t("tutoring.new")}</Typography>
 
                             <IconButton
                                 className="btn-add"
-                                onClick={() => navigate("/Tutoria")}
+                                onClick={() => abrirTutoria()}
+                                aria-label={t("tutoring.new")}
                             >
                                 <AddIcon />
                             </IconButton>
@@ -121,79 +163,60 @@ function Tutorias() {
                     )}
                 </div>
 
-                {/* cuerpo principal */}
                 <div className="tutorias-body">
-
-                    {/* boton de filtros */}
                     <Box className="tutorias-filtros">
-                        <Typography>Filtrar</Typography>
-                        <IconButton onClick={() => setOpenFiltro(true)}>
+                        <Typography>{t("common.filter")}</Typography>
+                        <IconButton onClick={() => setOpenFiltro(true)} aria-label={t("tutoring.filterTitle")}>
                             <FilterListIcon />
                         </IconButton>
                     </Box>
 
-                    {/* lista de tutorias */}
                     <div className="tutorias-lista">
-
                         {loading ? (
-                            // loading
-                            <Box>Cargando...</Box>
+                            <Box>{t("common.loading")}</Box>
                         ) : !Array.isArray(tutorias) || tutorias.length === 0 ? (
-                            // sin datos
-                            <Box>No hay tutorías</Box>
+                            <Box>{t("tutoring.empty")}</Box>
                         ) : (
-                            tutorias.map((t) => (
-                                    <Card key={t.idSesion} className={`tutoria-item ${getClaseEstado(t.estado)}`}>
-
+                            tutorias.map((tutoria) => (
+                                <Card key={tutoria.idSesion} className={`tutoria-item ${getClaseEstado(tutoria.estado)}`}>
                                     <CardContent className="tutorias-c" sx={{ padding: "0px !important" }}>
-
-                                            <div className="tutoria-row">
-
-                                                {/* izquierda */}
-                                                <div className="tutoria-izq">
-                                                    <strong>{t.motivo}</strong>
-                                                </div>
-
-                                                {/* derecha */}
-                                                <div className="tutoria-der">
-                                                    <span>{t.fecha}</span>
-                                                    <span>{t.horaIni} - {t.horaFin}</span>
-                                                </div>
-
-                                                {/* accion */}
-                                                <div className="tutoria-ctrl">
-                                                    <IconButton onClick={() => navigate(`/Tutoria/${t.idSesion}`)}>
-                                                        <Arrow />
-                                                    </IconButton>
-                                                </div>
-
+                                        <div className="tutoria-row">
+                                            <div className="tutoria-izq">
+                                                <strong>{tutoria.motivo}</strong>
                                             </div>
-                                        </CardContent>
-                                    </Card>
+
+                                            <div className="tutoria-der">
+                                                <span>{formatDate(tutoria.fecha)}</span>
+                                                <span>{tutoria.horaIni} - {tutoria.horaFin}</span>
+                                            </div>
+
+                                            <div className="tutoria-ctrl">
+                                                <IconButton onClick={() => abrirTutoria(tutoria.idSesion)} aria-label={t("tutoring.open")}>
+                                                    <Arrow />
+                                                </IconButton>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
                             ))
                         )}
-
                     </div>
                 </div>
 
-                {/* modal de filtros */}
                 <Modal open={openFiltro} onClose={() => setOpenFiltro(false)}>
                     <Box className="modal-filtro">
-
-                        {/* titulo modal */}
                         <Typography variant="h6" mb={2}>
-                            Filtrar tutorías
+                            {t("tutoring.filterTitle")}
                         </Typography>
 
-                        {/* filtro estado */}
-                        <Typography mb={1}>Estado</Typography>
+                        <Typography mb={1}>{t("common.status")}</Typography>
 
                         <Box display="flex" flexWrap="wrap" gap={1} mb={2}>
                             {[
-                                { label: "Todas", value: null },
-                                { label: "Pendientes", value: "PENDIENTE" },
-                                { label: "Edición", value: "EDICION" },
-                                { label: "Completadas", value: "COMPLETADA" }
+                                { label: t("tutoring.states.all"), value: null },
+                                { label: t("tutoring.states.pending"), value: "PENDIENTE" },
+                                { label: t("tutoring.states.editing"), value: "EDICION" },
+                                { label: t("tutoring.states.completed"), value: "COMPLETADA" }
                             ].map((op) => (
                                 <Box
                                     key={op.label}
@@ -212,19 +235,18 @@ function Tutorias() {
                             ))}
                         </Box>
 
-                        {/* filtro alumno (solo tutor/admin) */}
                         {usuario.id_rol !== 2 && (
                             <>
-                                <Typography mb={1}>Alumno</Typography>
+                                <Typography mb={1}>{t("common.student")}</Typography>
 
                                 <FormControl fullWidth size="small">
-                                    <InputLabel>Seleccionar alumno</InputLabel>
+                                    <InputLabel>{t("tutoring.selectStudent")}</InputLabel>
                                     <Select
                                         value={alumnoTemp}
-                                        label="Seleccionar alumno"
+                                        label={t("tutoring.selectStudent")}
                                         onChange={(e) => setAlumnoTemp(e.target.value)}
                                     >
-                                        <MenuItem value="">Todos</MenuItem>
+                                        <MenuItem value="">{t("common.all")}</MenuItem>
 
                                         {alumnos.map((a) => (
                                             <MenuItem key={a.id_alumno} value={a.id_alumno}>
@@ -236,7 +258,6 @@ function Tutorias() {
                             </>
                         )}
 
-                        {/* aplicar filtros */}
                         <Button
                             fullWidth
                             variant="contained"
@@ -247,15 +268,26 @@ function Tutorias() {
                                 setOpenFiltro(false);
                             }}
                         >
-                            Aplicar filtros
+                            {t("common.applyFilters")}
                         </Button>
-
                     </Box>
                 </Modal>
 
+                <Modal open={openTutoria} onClose={cerrarTutoria}>
+                    <Box className="modal-tutoria">
+                        <Tutoria
+                            modal
+                            id={tutoriaSeleccionada}
+                            initialAlumnoId={tutoriaInicial?.alumnoId}
+                            initialSeguimientoId={tutoriaInicial?.seguimientoId}
+                            initialSeguimientoTitulo={tutoriaInicial?.seguimientoTitulo}
+                            onClose={cerrarTutoria}
+                            onSaved={completarTutoria}
+                        />
+                    </Box>
+                </Modal>
             </div>
 
-            {/* alerta global */}
             <Alerta
                 open={popup.open}
                 loading={popup.loading}
@@ -264,7 +296,6 @@ function Tutorias() {
                 mensaje={popup.mensaje}
                 onClose={() => setPopup(prev => ({ ...prev, open: false }))}
             />
-
         </Layout>
     );
 }

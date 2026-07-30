@@ -23,5 +23,9 @@ public partial class SesionTutorium
 
     public string Estado { get; set; } = null!;
 
+    public int? IdSeguimiento { get; set; }
+
+    public virtual Seguimiento? IdSeguimientoNavigation { get; set; }
+
     public virtual Tutorium IdTutoriaNavigation { get; set; } = null!;
 }

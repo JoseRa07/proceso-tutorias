@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "../api";
+import { useI18n } from "../i18n/I18nContext";
 
-export const useTutorias = (usuario, estado, alumnoId, setPopup) => {
+export const useTutorias = (usuario, estado, alumnoId, setPopup, refreshKey = 0) => {
+    const { t } = useI18n();
 
     const [tutorias, setTutorias] = useState([]);
     const [alumnos, setAlumnos] = useState([]);
@@ -28,8 +30,8 @@ export const useTutorias = (usuario, estado, alumnoId, setPopup) => {
                         open: true,
                         loading: true,
                         type: "info",
-                        titulo: "Recuperando información...",
-                        mensaje: "Por favor espera"
+                        titulo: t("tutoring.loadingInfoTitle"),
+                        mensaje: t("tutoring.loadingInfoMessage")
                     });
                 }
 
@@ -77,8 +79,8 @@ export const useTutorias = (usuario, estado, alumnoId, setPopup) => {
                             open: true,
                             loading: false,
                             type: "success",
-                            titulo: "Información recuperada",
-                            mensaje: "Datos cargados correctamente"
+                            titulo: t("tutoring.loadedTitle"),
+                            mensaje: t("tutoring.loadedMessage")
                         });
                     }, delay);
                 }
@@ -93,8 +95,8 @@ export const useTutorias = (usuario, estado, alumnoId, setPopup) => {
                         open: true,
                         loading: false,
                         type: "error",
-                        titulo: "Ocurrió un error",
-                        mensaje: "No se pudo obtener la información"
+                        titulo: t("tutoring.fetchErrorTitle"),
+                        mensaje: t("tutoring.fetchErrorMessage")
                     });
                 }, 1000);
 
@@ -105,7 +107,7 @@ export const useTutorias = (usuario, estado, alumnoId, setPopup) => {
 
         fetchData();
 
-    }, [usuario, estado, alumnoId]);
+    }, [usuario, estado, alumnoId, refreshKey, alreadyLoadedKey, setPopup, t]);
 
     return { tutorias, loading, alumnos };
 };
