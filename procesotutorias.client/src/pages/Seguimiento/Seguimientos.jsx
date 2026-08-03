@@ -27,6 +27,7 @@ import { useSeguimientos } from "../../hooks/useSeguimientos";
 import { useI18n } from "../../i18n/I18nContext";
 import SeguimientoModal from "./SeguimientoModal";
 import "../../assets/estilos/Seguimientos.css";
+import { getAuthSession } from "../../auth/session";
 
 const cardAnimation = {
     hidden: { opacity: 0, y: 18 },
@@ -36,10 +37,7 @@ const cardAnimation = {
 function Seguimientos() {
     const navigate = useNavigate();
     const { formatDate, t } = useI18n();
-    const [usuario] = useState(() => {
-        const stored = localStorage.getItem("usuario");
-        return stored ? JSON.parse(stored) : null;
-    });
+    const [usuario] = useState(() => getAuthSession()?.user || null);
     const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null);
     const [openFiltro, setOpenFiltro] = useState(false);
     const [estadoFiltro, setEstadoFiltro] = useState(null);
@@ -58,6 +56,24 @@ function Seguimientos() {
         cambiarEstado,
         obtenerAlumnosParaFiltro
     } = useSeguimientos(usuario, estadoFiltro);
+    const esAlumno = usuario?.id_rol === 2;
+    const textosVista = esAlumno
+        ? {
+            eyebrow: t("followup.studentEyebrow"),
+            title: t("followup.studentTitle"),
+            description: t("followup.studentDescription"),
+            loading: t("followup.studentLoading"),
+            emptyTitle: t("followup.studentEmptyTitle"),
+            emptyDescription: t("followup.studentEmptyDescription")
+        }
+        : {
+            eyebrow: t("followup.eyebrow"),
+            title: t("followup.title"),
+            description: t("followup.description"),
+            loading: t("followup.loadingStudents"),
+            emptyTitle: t("followup.emptyTitle"),
+            emptyDescription: t("followup.emptyDescription")
+        };
 
     useEffect(() => {
         if (!usuario) {
@@ -65,19 +81,19 @@ function Seguimientos() {
             return;
         }
 
-        if (usuario.id_rol !== 3) {
+        if (![2, 3].includes(usuario.id_rol)) {
             navigate("/Panel");
         }
     }, [navigate, usuario]);
 
-    if (!usuario || usuario.id_rol !== 3) return null;
+    if (!usuario || ![2, 3].includes(usuario.id_rol)) return null;
 
     const abrirFiltro = async () => {
         setEstadoTemp(estadoFiltro);
         setAlumnoTemp(alumnoFiltro);
         setOpenFiltro(true);
 
-        if (alumnosParaFiltro.length > 0) return;
+        if (esAlumno || alumnosParaFiltro.length > 0) return;
 
         try {
             setCargandoAlumnosFiltro(true);
@@ -100,13 +116,13 @@ function Seguimientos() {
                 <section className="seguimientos-head">
                     <Box>
                         <Typography component="span" className="seguimientos-eyebrow">
-                            {t("followup.eyebrow")}
+                            {textosVista.eyebrow}
                         </Typography>
                         <Typography variant="h5" fontWeight="bold" className="seguimientos-title">
-                            {t("followup.title")}
+                            {textosVista.title}
                         </Typography>
                         <Typography className="seguimientos-description">
-                            {t("followup.description")}
+                            {textosVista.description}
                         </Typography>
                     </Box>
                     <Box className="seguimientos-head-icon" aria-hidden="true">
@@ -125,7 +141,7 @@ function Seguimientos() {
                     {loading && (
                         <Box className="seguimientos-feedback">
                             <CircularProgress size={34} />
-                            <Typography>{t("followup.loadingStudents")}</Typography>
+                            <Typography>{textosVista.loading}</Typography>
                         </Box>
                     )}
 
@@ -140,9 +156,9 @@ function Seguimientos() {
                         <Box className="seguimientos-empty">
                             <PersonSearchRoundedIcon />
                             <Typography variant="h6" fontWeight="bold">
-                                {t("followup.emptyTitle")}
+                                {textosVista.emptyTitle}
                             </Typography>
-                            <Typography>{t("followup.emptyDescription")}</Typography>
+                            <Typography>{textosVista.emptyDescription}</Typography>
                         </Box>
                     )}
 
@@ -214,6 +230,7 @@ function Seguimientos() {
                 cargarSeguimientos={cargarSeguimientos}
                 cargarSesiones={cargarSesiones}
                 cambiarEstado={cambiarEstado}
+                readOnly={esAlumno}
             />
 
             <Modal open={openFiltro} onClose={() => setOpenFiltro(false)}>
@@ -230,32 +247,35 @@ function Seguimientos() {
                             { label: t("followup.states.finished"), value: "FINALIZADO" },
                             { label: t("followup.states.cancelled"), value: "CANCELADO" }
                         ].map((option) => (
-                            <Button
+                            <button
+                                type="button"
                                 key={option.label}
-                                variant={estadoTemp === option.value ? "contained" : "outlined"}
+                                className={`seguimiento-filter-state-option ${estadoTemp === option.value ? "active" : ""}`}
                                 onClick={() => setEstadoTemp(option.value)}
                             >
                                 {option.label}
-                            </Button>
+                            </button>
                         ))}
                     </Box>
 
-                    <FormControl fullWidth size="small" sx={{ mt: 2 }}>
-                        <InputLabel>{t("followup.filterStudent")}</InputLabel>
-                        <Select
-                            value={alumnoTemp}
-                            label={t("followup.filterStudent")}
-                            disabled={cargandoAlumnosFiltro}
-                            onChange={(event) => setAlumnoTemp(event.target.value)}
-                        >
-                            <MenuItem value="">{t("common.all")}</MenuItem>
-                            {alumnosParaFiltro.map((alumno) => (
-                                <MenuItem key={alumno.idAlumno} value={alumno.idAlumno}>
-                                    {alumno.nombreAlumno}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
+                    {!esAlumno && (
+                        <FormControl fullWidth size="small" sx={{ mt: 2 }}>
+                            <InputLabel>{t("followup.filterStudent")}</InputLabel>
+                            <Select
+                                value={alumnoTemp}
+                                label={t("followup.filterStudent")}
+                                disabled={cargandoAlumnosFiltro}
+                                onChange={(event) => setAlumnoTemp(event.target.value)}
+                            >
+                                <MenuItem value="">{t("common.all")}</MenuItem>
+                                {alumnosParaFiltro.map((alumno) => (
+                                    <MenuItem key={alumno.idAlumno} value={alumno.idAlumno}>
+                                        {alumno.nombreAlumno}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    )}
 
                     <Button
                         fullWidth

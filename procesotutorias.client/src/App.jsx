@@ -63,7 +63,7 @@ function App() {
                     <Route path="/Justificantes" element={<Justificantes />} />
                 </Route>
 
-                <Route element={<RequireAuth allowedRoles={[ROLES.TUTOR]} />}>
+                <Route element={<RequireAuth allowedRoles={[ROLES.ALUMNO, ROLES.TUTOR]} />}>
                     <Route path="/Seguimientos" element={<Seguimientos />} />
                 </Route>
 

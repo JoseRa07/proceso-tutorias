@@ -36,7 +36,8 @@ function SeguimientoModal({
     onRefresh,
     cargarSeguimientos,
     cargarSesiones,
-    cambiarEstado
+    cambiarEstado,
+    readOnly = false
 }) {
     const navigate = useNavigate();
     const { formatDate, t } = useI18n();
@@ -120,7 +121,7 @@ function SeguimientoModal({
                         : item
                 )
             );
-            onRefresh();
+            onRefresh?.();
         } catch (requestError) {
             setError(requestError.message);
         } finally {
@@ -268,21 +269,29 @@ function SeguimientoModal({
                                 <Typography color="text.secondary">
                                     {seguimientoSeleccionado.descripcion || t("followup.noDescription")}
                                 </Typography>
-                                <FormControl size="small" className="seguimiento-state-control">
-                                    <InputLabel>{t("common.status")}</InputLabel>
-                                    <Select
-                                        value={seguimientoSeleccionado.estado}
-                                        label={t("common.status")}
-                                        onChange={actualizarEstado}
-                                        disabled={savingState}
-                                    >
-                                        {STATUS_OPTIONS.map((status) => (
-                                            <MenuItem key={status} value={status}>
-                                                {statusLabel(status)}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
+                                {readOnly ? (
+                                    <Chip
+                                        size="small"
+                                        label={statusLabel(seguimientoSeleccionado.estado)}
+                                        className={`seguimiento-status status-${seguimientoSeleccionado.estado.toLowerCase()}`}
+                                    />
+                                ) : (
+                                    <FormControl size="small" className="seguimiento-state-control">
+                                        <InputLabel>{t("common.status")}</InputLabel>
+                                        <Select
+                                            value={seguimientoSeleccionado.estado}
+                                            label={t("common.status")}
+                                            onChange={actualizarEstado}
+                                            disabled={savingState}
+                                        >
+                                            {STATUS_OPTIONS.map((status) => (
+                                                <MenuItem key={status} value={status}>
+                                                    {statusLabel(status)}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                )}
                             </Box>
 
                             <Box className="seguimiento-session-viewer">
@@ -344,19 +353,21 @@ function SeguimientoModal({
                                 )}
                             </Box>
 
-                            <Button
-                                fullWidth
-                                variant="contained"
-                                size="large"
-                                startIcon={<AddRoundedIcon />}
-                                className="seguimiento-add-session"
-                                disabled={seguimientoSeleccionado.estado !== "ACTIVO"}
-                                onClick={agregarTutoria}
-                            >
-                                {seguimientoSeleccionado.estado === "ACTIVO"
-                                    ? t("followup.addSession")
-                                    : t("followup.reopenToAdd")}
-                            </Button>
+                            {!readOnly && (
+                                <Button
+                                    fullWidth
+                                    variant="contained"
+                                    size="large"
+                                    startIcon={<AddRoundedIcon />}
+                                    className="seguimiento-add-session"
+                                    disabled={seguimientoSeleccionado.estado !== "ACTIVO"}
+                                    onClick={agregarTutoria}
+                                >
+                                    {seguimientoSeleccionado.estado === "ACTIVO"
+                                        ? t("followup.addSession")
+                                        : t("followup.reopenToAdd")}
+                                </Button>
+                            )}
                         </Motion.div>
                     )}
                 </AnimatePresence>

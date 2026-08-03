@@ -7,6 +7,16 @@ export const reportsDictionary = {
             4: "Reporte de participación docente",
             default: "Reporte"
         },
+        modules: {
+            tutoring: {
+                title: "Reporte de tutorías",
+                description: "Analiza el avance, los pendientes y la atención tutorial dentro del alcance de tu usuario."
+            },
+            excuses: {
+                title: "Reporte de justificantes",
+                description: "Revisa el estado de los justificantes y detecta solicitudes que requieren atención."
+            }
+        },
         metrics: {
             users: "Usuarios",
             students: "Alumnos",
@@ -24,23 +34,64 @@ export const reportsDictionary = {
         pendingExcusesShort: "Just. pendientes",
         loading: "Cargando reporte...",
         unavailable: "No hay datos disponibles para este reporte.",
-        eyebrow: "Toma de decisiones",
+        selectModule: "Selecciona el módulo",
+        selectModuleDescription: "En cada reporte se muestra información relevante para ti, de acuerdo con tu rol y los registros disponibles.",
+        viewReport: "Ver reporte",
+        changeModule: "Cambiar módulo",
+        switchTo: "Ver {{module}}",
+        eyebrow: "Reportes",
         description: "Indicadores relevantes para detectar pendientes, priorizar seguimiento y orientar acciones académicas.",
         export: "Exportar PDF",
         progress: "Avance de tutorías",
         progressDescription: "Porcentaje de tutorías completadas sobre el total registrado.",
+        resolutionRate: "Tasa de resolución",
+        resolved: "Resueltos",
         editing: "En edición",
         recommendations: "Recomendaciones",
         noCriticalAlerts: "No hay alertas críticas en este momento.",
         studentId: "Matrícula",
         lastSession: "Última tutoría",
+        nextSession: "Próxima tutoría",
         pendingExcuses: "Justificantes pendientes",
         groupsAttention: "Grupos que requieren atención",
         tutorWorkload: "Tutores con mayor carga de seguimiento",
         priorityStudents: "Alumnos a priorizar",
         excusesByStudent: "Justificantes por alumno",
+        excusesByGroup: "Justificantes por grupo",
         teacherDescription: "Este reporte permite identificar si el docente participa actualmente en seguimiento tutorial.",
+        charts: {
+            tutoringTitle: "Distribución de tutorías por estado",
+            tutoringDescription: "Permite identificar pendientes y sesiones que aún requieren correcciones.",
+            excusesTitle: "Distribución de justificantes por estado",
+            excusesDescription: "Permite priorizar solicitudes pendientes y revisar resultados de atención.",
+            groupsPendingDescription: "Compara las tutorías pendientes de cada grupo; la barra más larga representa el mayor rezago.",
+            tutorsPendingDescription: "Compara la carga pendiente de cada tutor para orientar la distribución del seguimiento.",
+            tutoringResolutionDescription: "Mide qué proporción de las tutorías registradas ya fue completada.",
+            excusesResolutionDescription: "Mide qué proporción de los justificantes ya recibió una resolución.",
+            groupCoverageTitle: "Cobertura tutorial por grupo",
+            groupCoverageDescription: "Compara el volumen y estado de las tutorías para detectar grupos con menor cierre o mayor rezago.",
+            studentCoverageTitle: "Atención tutorial por alumno",
+            studentCoverageDescription: "Compara las tutorías de los alumnos visibles para identificar pendientes y casos con poca continuidad.",
+            groupExcuseCoverageTitle: "Resolución de justificantes por grupo",
+            groupExcuseCoverageDescription: "Compara resultados y solicitudes pendientes para priorizar los grupos que requieren revisión.",
+            studentExcuseCoverageTitle: "Resolución de justificantes por alumno",
+            studentExcuseCoverageDescription: "Compara los justificantes de los alumnos del tutor y destaca solicitudes todavía pendientes."
+        },
+        decisions: {
+            tutoringNoData: "No hay tutorías activas dentro del alcance de este usuario; conviene verificar si ya deben programarse sesiones.",
+            tutoringPending: "Hay {{count}} tutoría(s) pendiente(s) que requieren seguimiento.",
+            tutoringEditing: "Hay {{count}} tutoría(s) en edición que deben corregirse antes de su cierre.",
+            tutoringUpToDate: "No hay pendientes ni correcciones; el avance de cierre es de {{percent}}%.",
+            excusesNoData: "No hay justificantes activos dentro del alcance de este usuario.",
+            excusesPending: "Hay {{count}} justificante(s) pendiente(s) de revisión.",
+            excusesRejected: "Hay {{count}} justificante(s) rechazado(s); conviene revisar si existen causas recurrentes.",
+            excusesUpToDate: "No hay justificantes pendientes de revisión."
+        },
         fileName: "reporte.pdf",
+        fileNames: {
+            tutoring: "reporte-tutorias.pdf",
+            excuses: "reporte-justificantes.pdf"
+        },
         pdf: {
             subtitle: "Documento de seguimiento académico generado por el sistema",
             generatedAt: "Fecha de generación",
@@ -53,6 +104,7 @@ export const reportsDictionary = {
             name: "Nombre",
             tutor: "Tutor",
             group: "Grupo",
+            program: "Carrera",
             total: "Total",
             approved: "Aprobados",
             rejected: "Rechazados",
@@ -85,6 +137,16 @@ export const reportsDictionary = {
             4: "Instructor participation report",
             default: "Report"
         },
+        modules: {
+            tutoring: {
+                title: "Tutoring report",
+                description: "Review progress, pending work, and tutoring attention within your account scope."
+            },
+            excuses: {
+                title: "Absence notes report",
+                description: "Review absence-note status and identify requests that need attention."
+            }
+        },
         metrics: {
             users: "Users",
             students: "Students",
@@ -102,23 +164,64 @@ export const reportsDictionary = {
         pendingExcusesShort: "Notes pending",
         loading: "Loading report...",
         unavailable: "No data is available for this report.",
-        eyebrow: "Decision support",
+        selectModule: "Select a module",
+        selectModuleDescription: "Each report shows information that is relevant to you based on your role and the records available to your account.",
+        viewReport: "View report",
+        changeModule: "Change module",
+        switchTo: "View {{module}}",
+        eyebrow: "Reports",
         description: "Key indicators for spotting pending work, prioritizing follow-up, and guiding academic support.",
         export: "Export PDF",
         progress: "Tutoring progress",
         progressDescription: "Percentage of recorded sessions that have been completed.",
+        resolutionRate: "Resolution rate",
+        resolved: "Resolved",
         editing: "Needs changes",
         recommendations: "Recommendations",
         noCriticalAlerts: "There are no critical alerts right now.",
         studentId: "Student ID",
         lastSession: "Latest session",
+        nextSession: "Next session",
         pendingExcuses: "Pending absence notes",
         groupsAttention: "Groups that need attention",
         tutorWorkload: "Tutors with the highest follow-up workload",
         priorityStudents: "Students to prioritize",
         excusesByStudent: "Absence notes by student",
+        excusesByGroup: "Absence notes by group",
         teacherDescription: "This report shows whether the instructor currently participates in tutoring follow-up.",
+        charts: {
+            tutoringTitle: "Tutoring sessions by status",
+            tutoringDescription: "Highlights pending sessions and records that still need corrections.",
+            excusesTitle: "Absence notes by status",
+            excusesDescription: "Helps prioritize pending requests and review attention outcomes.",
+            groupsPendingDescription: "Compares pending sessions by group; the longest bar represents the largest backlog.",
+            tutorsPendingDescription: "Compares each tutor's pending workload to guide follow-up distribution.",
+            tutoringResolutionDescription: "Shows the proportion of recorded tutoring sessions that has already been completed.",
+            excusesResolutionDescription: "Shows the proportion of absence notes that has already received a decision.",
+            groupCoverageTitle: "Tutoring coverage by group",
+            groupCoverageDescription: "Compares session volume and status to identify groups with lower completion or larger backlogs.",
+            studentCoverageTitle: "Tutoring attention by student",
+            studentCoverageDescription: "Compares visible students' sessions to identify pending work and cases with limited continuity.",
+            groupExcuseCoverageTitle: "Absence-note resolution by group",
+            groupExcuseCoverageDescription: "Compares decisions and pending requests to prioritize groups that need review.",
+            studentExcuseCoverageTitle: "Absence-note resolution by student",
+            studentExcuseCoverageDescription: "Compares students' absence notes and highlights requests that are still pending."
+        },
+        decisions: {
+            tutoringNoData: "There are no active tutoring sessions in this account's scope; verify whether sessions should be scheduled.",
+            tutoringPending: "There are {{count}} pending tutoring session(s) that require follow-up.",
+            tutoringEditing: "There are {{count}} session(s) needing corrections before they can be closed.",
+            tutoringUpToDate: "There are no pending items or corrections; the completion rate is {{percent}}%.",
+            excusesNoData: "There are no active absence notes in this account's scope.",
+            excusesPending: "There are {{count}} absence note(s) awaiting review.",
+            excusesRejected: "There are {{count}} rejected absence note(s); review whether there are recurring causes.",
+            excusesUpToDate: "There are no absence notes awaiting review."
+        },
         fileName: "tutoring-report.pdf",
+        fileNames: {
+            tutoring: "tutoring-report.pdf",
+            excuses: "absence-notes-report.pdf"
+        },
         pdf: {
             subtitle: "Academic follow-up document generated by the system",
             generatedAt: "Generated on",
@@ -131,6 +234,7 @@ export const reportsDictionary = {
             name: "Name",
             tutor: "Tutor",
             group: "Group",
+            program: "Program",
             total: "Total",
             approved: "Approved",
             rejected: "Rejected",

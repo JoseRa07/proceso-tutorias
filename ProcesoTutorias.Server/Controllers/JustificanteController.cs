@@ -175,10 +175,21 @@ namespace ProcesoTutorias.Server.Controllers
         [Authorize(Roles = "TUTOR")]
         public IActionResult Aceptar(int id)
         {
-            var j = _context.Justificantes.Find(id);
+            if (!InputSanitizer.IsPositiveId(id))
+                return BadRequest(new { message = "[JUSTIFICANTE_ID_INVALIDO] El identificador debe ser un entero mayor que cero." });
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int idUsuario))
+                return Unauthorized();
+
+            var j = _context.Justificantes.FirstOrDefault(item =>
+                item.IdJustificante == id &&
+                item.Estado != "INACTIVO" &&
+                item.IdAlumnoNavigation.IdGrupoNavigation.IdTutorNavigation != null &&
+                item.IdAlumnoNavigation.IdGrupoNavigation.IdTutorNavigation.IdMaestroNavigation.IdUsuario == idUsuario);
 
             if (j == null)
                 return NotFound();
+            if (j.Estado != "PENDIENTE")
+                return Conflict(new { message = "[JUSTIFICANTE_ESTADO_INVALIDO] Solo un justificante pendiente puede aprobarse." });
 
             string previousState = j.Estado;
             j.Estado = "ACEPTADO";
@@ -199,14 +210,24 @@ namespace ProcesoTutorias.Server.Controllers
         [Authorize(Roles = "ALUMNO")]
         public IActionResult Editar(int id, [FromBody] JustificanteReq dto)
         {
+            if (!InputSanitizer.IsPositiveId(id))
+                return BadRequest(new { message = "[JUSTIFICANTE_ID_INVALIDO] El identificador debe ser un entero mayor que cero." });
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int idUsuario))
+                return Unauthorized();
+
             string? validationError = ValidarJustificante(dto);
             if (validationError != null)
                 return BadRequest(new { message = validationError });
 
-            var j = _context.Justificantes.Find(id);
+            var j = _context.Justificantes.FirstOrDefault(item =>
+                item.IdJustificante == id &&
+                item.Estado != "INACTIVO" &&
+                item.IdAlumnoNavigation.IdUsuario == idUsuario);
 
             if (j == null)
                 return NotFound();
+            if (j.Estado != "PENDIENTE")
+                return Conflict(new { message = "[JUSTIFICANTE_ESTADO_INVALIDO] Solo un justificante pendiente puede editarse." });
 
             j.Descripcion = InputSanitizer.NormalizeMultiline(dto.Descripcion);
             j.Fecha = dto.Fecha;
@@ -223,10 +244,20 @@ namespace ProcesoTutorias.Server.Controllers
         [Authorize(Roles = "ALUMNO")]
         public IActionResult Eliminar(int id)
         {
-            var j = _context.Justificantes.Find(id);
+            if (!InputSanitizer.IsPositiveId(id))
+                return BadRequest(new { message = "[JUSTIFICANTE_ID_INVALIDO] El identificador debe ser un entero mayor que cero." });
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int idUsuario))
+                return Unauthorized();
+
+            var j = _context.Justificantes.FirstOrDefault(item =>
+                item.IdJustificante == id &&
+                item.Estado != "INACTIVO" &&
+                item.IdAlumnoNavigation.IdUsuario == idUsuario);
 
             if (j == null)
                 return NotFound();
+            if (j.Estado != "PENDIENTE")
+                return Conflict(new { message = "[JUSTIFICANTE_ESTADO_INVALIDO] Solo un justificante pendiente puede eliminarse." });
 
             string previousState = j.Estado;
             j.Estado = "INACTIVO";

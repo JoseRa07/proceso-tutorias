@@ -1,5 +1,11 @@
 export const followupDictionary = {
     "es-MX": {
+        studentEyebrow: "Mi acompañamiento",
+        studentTitle: "Mis seguimientos",
+        studentDescription: "Consulta los casos de seguimiento asociados a tu cuenta y revisa las tutorías registradas en cada uno.",
+        studentLoading: "Cargando mis seguimientos...",
+        studentEmptyTitle: "Aún no tienes seguimientos",
+        studentEmptyDescription: "Cuando tu tutor registre un caso que necesite continuidad, podrás consultarlo aquí junto con sus tutorías.",
         eyebrow: "Acompañamiento continuo",
         title: "Seguimiento de alumnos",
         description: "Consulta situaciones que necesitan continuidad y revisa las tutorías registradas en cada caso.",
@@ -62,6 +68,12 @@ export const followupDictionary = {
         }
     },
     "en-US": {
+        studentEyebrow: "My ongoing support",
+        studentTitle: "My follow-up cases",
+        studentDescription: "Review the follow-up cases linked to your account and the tutoring sessions recorded in each one.",
+        studentLoading: "Loading my follow-up cases...",
+        studentEmptyTitle: "You do not have follow-up cases yet",
+        studentEmptyDescription: "When your tutor records a case that needs continued attention, you will be able to review it here with its tutoring sessions.",
         eyebrow: "Ongoing student support",
         title: "Student follow-up",
         description: "Review concerns that need continued attention and see every tutoring session recorded for each case.",

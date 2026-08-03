@@ -7,6 +7,7 @@ export const excusesDictionary = {
         studentDescription: "Consulta tus justificantes y registra nuevas evidencias cuando lo necesites.",
         staffDescription: "Revisa los justificantes enviados por los alumnos de tus grupos.",
         new: "Nuevo justificante",
+        open: "Abrir justificante",
         empty: "No hay justificantes",
         filterTitle: "Filtrar justificantes",
         states: {
@@ -51,6 +52,7 @@ export const excusesDictionary = {
         studentDescription: "Review your absence notes and submit supporting evidence whenever needed.",
         staffDescription: "Review absence notes submitted by students in your groups.",
         new: "New absence note",
+        open: "Open absence note",
         empty: "No absence notes found",
         filterTitle: "Filter absence notes",
         states: {

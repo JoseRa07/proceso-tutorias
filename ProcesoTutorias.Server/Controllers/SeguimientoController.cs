@@ -10,7 +10,7 @@ namespace ProcesoTutorias.Server.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "TUTOR")]
+[Authorize(Roles = "TUTOR,ALUMNO")]
 public class SeguimientoController : ControllerBase
 {
     private static readonly HashSet<string> EstadosPermitidos =
@@ -26,13 +26,24 @@ public class SeguimientoController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<SeguimientoAlumnoResumenDto>>> ObtenerAlumnos(string? estado = null)
     {
-        var tutor = await ObtenerTutorActual();
-        if (tutor == null)
-            return Forbid();
+        IQueryable<Seguimiento> query = _context.Seguimientos.AsNoTracking();
 
-        var query = _context.Seguimientos
-            .AsNoTracking()
-            .Where(seguimiento => seguimiento.IdTutor == tutor.IdTutor);
+        if (User.IsInRole("ALUMNO"))
+        {
+            var alumno = await ObtenerAlumnoActual();
+            if (alumno == null)
+                return Forbid();
+
+            query = query.Where(seguimiento => seguimiento.IdAlumno == alumno.IdAlumno);
+        }
+        else
+        {
+            var tutor = await ObtenerTutorActual();
+            if (tutor == null)
+                return Forbid();
+
+            query = query.Where(seguimiento => seguimiento.IdTutor == tutor.IdTutor);
+        }
 
         if (!string.IsNullOrWhiteSpace(estado))
         {
@@ -77,15 +88,28 @@ public class SeguimientoController : ControllerBase
         if (!InputSanitizer.IsPositiveId(idAlumno))
             return BadRequest(new { message = "[ALUMNO_INVALIDO] El alumno debe ser un entero mayor que cero." });
 
-        var tutor = await ObtenerTutorActual();
-        if (tutor == null)
-            return Forbid();
+        IQueryable<Seguimiento> query = _context.Seguimientos.AsNoTracking();
 
-        var query = _context.Seguimientos
-            .AsNoTracking()
-            .Where(seguimiento =>
+        if (User.IsInRole("ALUMNO"))
+        {
+            var alumno = await ObtenerAlumnoActual();
+            if (alumno == null)
+                return Forbid();
+            if (alumno.IdAlumno != idAlumno)
+                return NotFound();
+
+            query = query.Where(seguimiento => seguimiento.IdAlumno == alumno.IdAlumno);
+        }
+        else
+        {
+            var tutor = await ObtenerTutorActual();
+            if (tutor == null)
+                return Forbid();
+
+            query = query.Where(seguimiento =>
                 seguimiento.IdTutor == tutor.IdTutor &&
                 seguimiento.IdAlumno == idAlumno);
+        }
 
         if (soloActivos)
             query = query.Where(seguimiento => seguimiento.Estado == "ACTIVO");
@@ -119,17 +143,33 @@ public class SeguimientoController : ControllerBase
         if (!InputSanitizer.IsPositiveId(idSeguimiento))
             return BadRequest(new { message = "[SEGUIMIENTO_INVALIDO] El seguimiento debe ser un entero mayor que cero." });
 
-        var tutor = await ObtenerTutorActual();
-        if (tutor == null)
-            return Forbid();
+        bool puedeConsultar;
+        if (User.IsInRole("ALUMNO"))
+        {
+            var alumno = await ObtenerAlumnoActual();
+            if (alumno == null)
+                return Forbid();
 
-        var perteneceAlTutor = await _context.Seguimientos
-            .AsNoTracking()
-            .AnyAsync(seguimiento =>
-                seguimiento.IdSeguimiento == idSeguimiento &&
-                seguimiento.IdTutor == tutor.IdTutor);
+            puedeConsultar = await _context.Seguimientos
+                .AsNoTracking()
+                .AnyAsync(seguimiento =>
+                    seguimiento.IdSeguimiento == idSeguimiento &&
+                    seguimiento.IdAlumno == alumno.IdAlumno);
+        }
+        else
+        {
+            var tutor = await ObtenerTutorActual();
+            if (tutor == null)
+                return Forbid();
 
-        if (!perteneceAlTutor)
+            puedeConsultar = await _context.Seguimientos
+                .AsNoTracking()
+                .AnyAsync(seguimiento =>
+                    seguimiento.IdSeguimiento == idSeguimiento &&
+                    seguimiento.IdTutor == tutor.IdTutor);
+        }
+
+        if (!puedeConsultar)
             return NotFound();
 
         var sesiones = await _context.SesionTutoria
@@ -152,6 +192,7 @@ public class SeguimientoController : ControllerBase
     }
 
     [HttpPut("{idSeguimiento:int}/estado")]
+    [Authorize(Roles = "TUTOR")]
     public async Task<IActionResult> CambiarEstado(
         int idSeguimiento,
         [FromBody] SeguimientoEstadoRequest? request)
@@ -185,6 +226,7 @@ public class SeguimientoController : ControllerBase
     }
 
     [HttpPut("vincular-sesion/{idSesion:int}")]
+    [Authorize(Roles = "TUTOR")]
     public async Task<IActionResult> VincularSesion(
         int idSesion,
         [FromBody] VincularSeguimientoRequest? request)
@@ -306,5 +348,16 @@ public class SeguimientoController : ControllerBase
         return await _context.Tutors
             .AsNoTracking()
             .FirstOrDefaultAsync(tutor => tutor.IdMaestroNavigation.IdUsuario == idUsuario);
+    }
+
+    private async Task<Alumno?> ObtenerAlumnoActual()
+    {
+        var idUsuarioClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(idUsuarioClaim, out var idUsuario))
+            return null;
+
+        return await _context.Alumnos
+            .AsNoTracking()
+            .FirstOrDefaultAsync(alumno => alumno.IdUsuario == idUsuario);
     }
 }

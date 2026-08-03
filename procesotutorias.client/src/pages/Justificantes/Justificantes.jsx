@@ -4,6 +4,7 @@ import {
     Box,
     Button,
     Card,
+    CardActionArea,
     CardContent,
     Chip,
     FormControl,
@@ -154,36 +155,40 @@ function Justificantes() {
                         ) : (
                             justificantes.map((j) => (
                                 <Card key={j.idJustificante} className={`tutoria-item ${getClaseEstado(j.estado)}`}>
-                                    <CardContent className="tutorias-c" sx={{ padding: "0px !important" }}>
-                                        <div className="tutoria-row">
-                                            <div className="tutoria-izq">
-                                                <strong>{j.descripcion}</strong>
-                                                {j.nombreAlumno && (
-                                                    <Typography variant="body2" color="text.secondary">
-                                                        {j.nombreAlumno}
-                                                    </Typography>
-                                                )}
-                                            </div>
+                                    <CardActionArea
+                                        className="tutoria-card-action"
+                                        onClick={() => abrirDetalle(j)}
+                                        aria-label={`${t("excuses.open")}: ${j.descripcion}`}
+                                    >
+                                        <CardContent className="tutorias-c" sx={{ padding: "0px !important" }}>
+                                            <div className="tutoria-row">
+                                                <div className="tutoria-izq">
+                                                    <strong>{j.descripcion}</strong>
+                                                    {j.nombreAlumno && (
+                                                        <Typography variant="body2" className="tutoria-alumno">
+                                                            {t("common.student")}: {j.nombreAlumno}
+                                                        </Typography>
+                                                    )}
+                                                </div>
 
-                                            <div className="tutoria-der">
-                                                <span>{formatDate(j.fecha)}</span>
-                                                <Chip
-                                                    size="small"
-                                                    label={j.estado === "PENDIENTE"
-                                                        ? t("excuses.states.review")
-                                                        : t(`common.statusLabels.${j.estado}`)}
-                                                    color={j.estado === "ACEPTADO" ? "success" : "warning"}
-                                                    variant="outlined"
-                                                />
-                                            </div>
+                                                <div className="tutoria-der">
+                                                    <span>{formatDate(j.fecha)}</span>
+                                                    <Chip
+                                                        size="small"
+                                                        label={j.estado === "PENDIENTE"
+                                                            ? t("excuses.states.review")
+                                                            : t(`common.statusLabels.${j.estado}`)}
+                                                        color={j.estado === "ACEPTADO" ? "success" : "warning"}
+                                                        variant="outlined"
+                                                    />
+                                                </div>
 
-                                            <div className="tutoria-ctrl">
-                                                <IconButton onClick={() => abrirDetalle(j)}>
+                                                <div className="tutoria-ctrl" aria-hidden="true">
                                                     <Arrow />
-                                                </IconButton>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </CardContent>
+                                        </CardContent>
+                                    </CardActionArea>
                                 </Card>
                             ))
                         )}

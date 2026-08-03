@@ -32,6 +32,7 @@ import {
     validateIdentifier,
     validatePositiveInteger
 } from "../../utils/validation";
+import { getAuthSession } from "../../auth/session";
 
 const hoy = new Date().toISOString().split("T")[0];
 
@@ -46,7 +47,7 @@ const inicial = {
 function GestionTutores() {
     const { formatDate, locale, t } = useI18n();
     const navigate = useNavigate();
-    const usuario = JSON.parse(localStorage.getItem("usuario"));
+    const usuario = getAuthSession()?.user;
     const { candidatosTutor, cargarCandidatosTutor } = useAdminCatalogos();
     const { tutores, loading, error, cargarTutores, requestAdmin } = useAdminTutores();
     const [form, setForm] = useState(inicial);
@@ -212,12 +213,14 @@ function GestionTutores() {
                                     <CardContent sx={{ padding: "10px !important" }}>
                                         <div className="admin-row">
                                             <Box>
-                                                <Typography fontWeight="bold">{item.nombreCompleto}</Typography>
+                                                <div className="admin-name-line">
+                                                    <Typography fontWeight="bold">{item.nombreCompleto}</Typography>
+                                                    <span className={`admin-chip ${item.esTutor ? "" : "warning"}`}>{item.esTutor ? t("administration.tutors.tutor") : t("administration.tutors.teacher")}</span>
+                                                </div>
                                                 <div className="admin-meta">
                                                     <span>{item.correo}</span>
                                                     <span>{item.codEmpleado}</span>
                                                     <span>{t("administration.tutors.validUntil")}: {formatDate(item.vigencia)}</span>
-                                                    <span className={`admin-chip ${item.esTutor ? "" : "warning"}`}>{item.esTutor ? t("administration.tutors.tutor") : t("administration.tutors.teacher")}</span>
                                                     <span>{t("administration.tutors.groups")}: {item.totalGrupos}</span>
                                                     <span>{t("administration.tutors.sessions")}: {item.totalTutorias}</span>
                                                 </div>

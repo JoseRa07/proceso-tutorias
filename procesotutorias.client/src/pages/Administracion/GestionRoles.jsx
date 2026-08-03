@@ -21,11 +21,12 @@ import "../../assets/estilos/Administracion.css";
 import { useI18n } from "../../i18n/I18nContext";
 import { translateRole } from "../../i18n/catalogTranslations";
 import { sanitizeSingleLine, validateIdentifier } from "../../utils/validation";
+import { getAuthSession } from "../../auth/session";
 
 function GestionRoles() {
     const { locale, t } = useI18n();
     const navigate = useNavigate();
-    const usuario = JSON.parse(localStorage.getItem("usuario"));
+    const usuario = getAuthSession()?.user;
     const { roles, loading, error, cargarRoles, requestAdmin } = useAdminCatalogos();
     const [form, setForm] = useState({ idRol: null, nombre: "" });
     const [fieldError, setFieldError] = useState("");

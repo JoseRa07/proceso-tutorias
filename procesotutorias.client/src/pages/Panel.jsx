@@ -28,6 +28,7 @@ import { usePanelInfo } from "../hooks/usePanelInfo";
 import { saludo } from "../utils/PanelUtils";
 import { useI18n } from "../i18n/I18nContext";
 import { translateRole } from "../i18n/catalogTranslations";
+import { getAuthSession } from "../auth/session";
 
 const cardAnimada = {
     oculto: { opacity: 0, y: 16 },
@@ -39,12 +40,9 @@ function Panel() {
 
     const navigate = useNavigate();
 
-    const [usuario] = useState(() => {
-        const usuarioStorage = localStorage.getItem("usuario");
-        return usuarioStorage ? JSON.parse(usuarioStorage) : null;
-    });
+    const [usuario] = useState(() => getAuthSession()?.user || null);
 
-    const { grupo, tutorias, tutoriasAsignadas } = usePanelInfo(usuario);
+    const { grupo, tutorias, tutoriasAsignadas, error } = usePanelInfo(usuario);
     const nombreUsuario = usuario?.nombre || t("panel.user");
     const rolNombre = usuario?.rol ? translateRole(t, usuario.rol) : t("panel.activeAccount");
     const tutoriasCompletadas = tutorias.filter((tutoria) => tutoria.estado === "COMPLETADA");
@@ -63,6 +61,7 @@ function Panel() {
         2: [
             { nombre: t("panel.routes.viewTutoring"), ruta: "/Tutorias", icon: SchoolIcon },
             { nombre: t("panel.routes.excuses"), ruta: "/Justificantes", icon: FilePresentIcon },
+            { nombre: t("panel.routes.followup"), ruta: "/Seguimientos", icon: TrackChangesRoundedIcon },
             { nombre: t("panel.routes.reports"), ruta: "/Reportes", icon: FilePresentIcon }
         ],
         3: [
@@ -121,6 +120,13 @@ function Panel() {
                                 )}
                             </Box>
                         </Motion.section>
+
+                        {error && (
+                            <Box className="panel-data-error" role="alert">
+                                <Typography fontWeight="bold">{t("common.error")}</Typography>
+                                <Typography>{error}</Typography>
+                            </Box>
+                        )}
 
                         {usuario.id_rol == 4 && (
                             <Motion.section className="panel-wait-card" variants={cardAnimada}>

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using ProcesoTutorias.Server.Models;
 using ProcesoTutorias.Server.DTOs;
 using System.Security.Claims;
@@ -123,6 +124,10 @@ namespace ProcesoTutorias.Server.Controllers
         {
             if (!InputSanitizer.IsPositiveId(idSesion))
                 return BadRequest(new { message = "[TUTORIA_ID_INVALIDO] El identificador debe ser un entero mayor que cero." });
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int idUsuarioActual))
+                return Unauthorized();
+
+            bool esAlumno = User.IsInRole("ALUMNO");
 
             var data = (from s in _context.SesionTutoria
                         join t in _context.Tutoria on s.IdTutoria equals t.IdTutoria
@@ -130,6 +135,9 @@ namespace ProcesoTutorias.Server.Controllers
                         join u in _context.Usuarios on a.IdUsuario equals u.IdUsuario
                         where s.IdSesion == idSesion
                         && s.Estado != "INACTIVO"
+                        && (esAlumno
+                            ? a.IdUsuario == idUsuarioActual
+                            : t.IdTutorNavigation.IdMaestroNavigation.IdUsuario == idUsuarioActual)
                         select new
                         {
                             idSesion = s.IdSesion,
@@ -178,56 +186,77 @@ namespace ProcesoTutorias.Server.Controllers
 
         [HttpPost]
         [Authorize(Roles = "TUTOR")]
-        public IActionResult CrearTutoria(int idUsuario, [FromBody] SesionTutoriaDto? dto)
+        public async Task<IActionResult> CrearTutoria(int idUsuario, [FromBody] SesionTutoriaDto? dto)
         {
-            try
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out idUsuario))
+                return Unauthorized();
+            if (dto == null)
+                return BadRequest(new { message = "[SOLICITUD_REQUERIDA] Los datos de la tutoría son obligatorios." });
+
+            string? validationError = ValidarSesion(dto);
+            if (validationError != null)
+                return BadRequest(new { message = validationError });
+            if (!InputSanitizer.TryParseTime(dto.HoraIni, out TimeOnly horaInicio) ||
+                !InputSanitizer.TryParseTime(dto.HoraFin, out TimeOnly horaFin))
             {
-                if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out idUsuario))
-                    return Unauthorized();
-
-                if (dto == null)
-                    return BadRequest("DTO vacío");
-                string? validationError = ValidarSesion(dto);
-                if (validationError != null)
-                    return BadRequest(new { message = validationError });
-
-                Tutor? tutor = _context.Tutors
-                    .First(t => t.IdMaestroNavigation.IdUsuario == idUsuario);
-
-                var tutoria = new Tutorium
-                {
-                    IdAlumno = dto.IdAlumno,
-                    IdTutor = tutor.IdTutor
-                };
-
-                _context.Tutoria.Add(tutoria);
-                _context.SaveChanges();
-
-                var sesion = new SesionTutorium
-                {
-                    IdTutoria = tutoria.IdTutoria,
-                    Fecha = dto.Fecha,
-                    HoraIni = TimeOnly.ParseExact(dto.HoraIni, "HH:mm"),
-                    HoraFin = TimeOnly.ParseExact(dto.HoraFin, "HH:mm"),
-                    Motivo = InputSanitizer.NormalizeSingleLine(dto.Motivo),
-                    PtsRelevantes = InputSanitizer.NormalizeMultiline(dto.Pts),
-                    CompromisosAcuerdos = InputSanitizer.NormalizeMultiline(dto.Acuerdos),
-                    Estado = "PENDIENTE"
-                };
-
-                _context.SesionTutoria.Add(sesion);
-                _context.SaveChanges();
-
-                return Ok(new
-                {
-                    message = "Tutoría creada correctamente",
-                    idSesion = sesion.IdSesion
-                });
+                return BadRequest(new { message = "[TUTORIA_HORA_INVALIDA] Las horas deben tener el formato HH:mm." });
             }
-            catch (Exception ex)
+
+            var tutor = await _context.Tutors
+                .AsNoTracking()
+                .FirstOrDefaultAsync(item => item.IdMaestroNavigation.IdUsuario == idUsuario);
+            if (tutor == null)
+                return Forbid();
+
+            var alumno = await _context.Alumnos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(item =>
+                    item.IdAlumno == dto.IdAlumno &&
+                    item.IdGrupoNavigation.IdTutor == tutor.IdTutor);
+            if (alumno == null)
+                return BadRequest(new { message = "[TUTORIA_ALUMNO_NO_ASIGNADO] El alumno no pertenece a un grupo asignado a este tutor." });
+
+            int? idGrupoCuatrimestre = await _context.GrupoCuatrimestres
+                .AsNoTracking()
+                .Where(item => item.IdGrupo == alumno.IdGrupo && item.Activo == true)
+                .OrderByDescending(item => item.IdGrupoCuatrimestre)
+                .Select(item => (int?)item.IdGrupoCuatrimestre)
+                .FirstOrDefaultAsync();
+            if (!idGrupoCuatrimestre.HasValue)
+                return Conflict(new { message = "[TUTORIA_PERIODO_NO_CONFIGURADO] El grupo no tiene un periodo activo para registrar tutorías." });
+
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            var tutoria = new Tutorium
             {
-                return BadRequest(ex.Message);
-            }
+                IdAlumno = dto.IdAlumno,
+                IdTutor = tutor.IdTutor,
+                IdGrupoCuatrimestre = idGrupoCuatrimestre.Value
+            };
+
+            _context.Tutoria.Add(tutoria);
+            await _context.SaveChangesAsync();
+
+            var sesion = new SesionTutorium
+            {
+                IdTutoria = tutoria.IdTutoria,
+                Fecha = dto.Fecha,
+                HoraIni = horaInicio,
+                HoraFin = horaFin,
+                Motivo = InputSanitizer.NormalizeSingleLine(dto.Motivo),
+                PtsRelevantes = InputSanitizer.NormalizeMultiline(dto.Pts),
+                CompromisosAcuerdos = InputSanitizer.NormalizeMultiline(dto.Acuerdos),
+                Estado = "PENDIENTE"
+            };
+
+            _context.SesionTutoria.Add(sesion);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            return Ok(new
+            {
+                message = "Tutoría creada correctamente",
+                idSesion = sesion.IdSesion
+            });
         }
 
         [HttpPut("{idSesion}")]
@@ -236,20 +265,31 @@ namespace ProcesoTutorias.Server.Controllers
         {
             if (!InputSanitizer.IsPositiveId(idSesion))
                 return BadRequest(new { message = "[TUTORIA_ID_INVALIDO] El identificador debe ser un entero mayor que cero." });
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int idUsuario))
+                return Unauthorized();
             if (dto == null)
-                return BadRequest("DTO vacío");
+                return BadRequest(new { message = "[SOLICITUD_REQUERIDA] Los datos de la tutoría son obligatorios." });
             string? validationError = ValidarSesion(dto);
             if (validationError != null)
                 return BadRequest(new { message = validationError });
+            if (!InputSanitizer.TryParseTime(dto.HoraIni, out TimeOnly horaInicio) ||
+                !InputSanitizer.TryParseTime(dto.HoraFin, out TimeOnly horaFin))
+            {
+                return BadRequest(new { message = "[TUTORIA_HORA_INVALIDA] Las horas deben tener el formato HH:mm." });
+            }
 
-            var sesion = _context.SesionTutoria.FirstOrDefault(x => x.IdSesion == idSesion);
+            var sesion = _context.SesionTutoria.FirstOrDefault(item =>
+                item.IdSesion == idSesion &&
+                item.Estado != "INACTIVO" &&
+                item.IdTutoriaNavigation.IdAlumno == dto.IdAlumno &&
+                item.IdTutoriaNavigation.IdTutorNavigation.IdMaestroNavigation.IdUsuario == idUsuario);
 
             if (sesion == null)
                 return NotFound();
 
             sesion.Fecha = dto.Fecha;
-            sesion.HoraIni = TimeOnly.ParseExact(dto.HoraIni, "HH:mm");
-            sesion.HoraFin = TimeOnly.ParseExact(dto.HoraFin, "HH:mm");
+            sesion.HoraIni = horaInicio;
+            sesion.HoraFin = horaFin;
             sesion.Motivo = InputSanitizer.NormalizeSingleLine(dto.Motivo);
             sesion.PtsRelevantes = InputSanitizer.NormalizeMultiline(dto.Pts);
             sesion.CompromisosAcuerdos = InputSanitizer.NormalizeMultiline(dto.Acuerdos);
@@ -267,8 +307,13 @@ namespace ProcesoTutorias.Server.Controllers
         {
             if (!InputSanitizer.IsPositiveId(idSesion))
                 return BadRequest(new { message = "[TUTORIA_ID_INVALIDO] El identificador debe ser un entero mayor que cero." });
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int idUsuario))
+                return Unauthorized();
 
-            var sesion = _context.SesionTutoria.FirstOrDefault(x => x.IdSesion == idSesion);
+            var sesion = _context.SesionTutoria.FirstOrDefault(item =>
+                item.IdSesion == idSesion &&
+                item.Estado != "INACTIVO" &&
+                item.IdTutoriaNavigation.IdTutorNavigation.IdMaestroNavigation.IdUsuario == idUsuario);
             if (sesion == null)
                 return NotFound();
 
@@ -291,10 +336,17 @@ namespace ProcesoTutorias.Server.Controllers
         {
             if (!InputSanitizer.IsPositiveId(idSesion))
                 return BadRequest(new { message = "[TUTORIA_ID_INVALIDO] El identificador debe ser un entero mayor que cero." });
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int idUsuario))
+                return Unauthorized();
 
-            var sesion = _context.SesionTutoria.FirstOrDefault(x => x.IdSesion == idSesion);
+            var sesion = _context.SesionTutoria.FirstOrDefault(item =>
+                item.IdSesion == idSesion &&
+                item.Estado != "INACTIVO" &&
+                item.IdTutoriaNavigation.IdAlumnoNavigation.IdUsuario == idUsuario);
             if (sesion == null)
                 return NotFound();
+            if (sesion.Estado != "PENDIENTE")
+                return Conflict(new { message = "[TUTORIA_ESTADO_INVALIDO] Solo una tutoría pendiente puede aceptarse." });
 
             string previousState = sesion.Estado;
             sesion.Estado = "COMPLETADA";
@@ -315,10 +367,17 @@ namespace ProcesoTutorias.Server.Controllers
         {
             if (!InputSanitizer.IsPositiveId(idSesion))
                 return BadRequest(new { message = "[TUTORIA_ID_INVALIDO] El identificador debe ser un entero mayor que cero." });
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int idUsuario))
+                return Unauthorized();
 
-            var sesion = _context.SesionTutoria.FirstOrDefault(x => x.IdSesion == idSesion);
+            var sesion = _context.SesionTutoria.FirstOrDefault(item =>
+                item.IdSesion == idSesion &&
+                item.Estado != "INACTIVO" &&
+                item.IdTutoriaNavigation.IdAlumnoNavigation.IdUsuario == idUsuario);
             if (sesion == null)
                 return NotFound();
+            if (sesion.Estado != "PENDIENTE")
+                return Conflict(new { message = "[TUTORIA_ESTADO_INVALIDO] Solo una tutoría pendiente puede solicitar correcciones." });
 
             sesion.Estado = "EDICION";
 

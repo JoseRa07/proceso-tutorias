@@ -14,6 +14,7 @@
         public int JustificantesAprobados { get; set; }
         public int JustificantesRechazados { get; set; }
         public string? UltimaTutoria { get; set; }
+        public string? ProximaTutoria { get; set; }
         public List<string> Recomendaciones { get; set; } = new();
     }
 }

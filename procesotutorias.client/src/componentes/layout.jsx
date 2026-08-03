@@ -75,10 +75,15 @@ function Layout({ children, variant = "default", contentClassName = "" }) {
     return (
         <>
             <header className={variant === "home" ? "header-home" : "header-default"}>
-                <div className="logo-cont">
+                <button
+                    type="button"
+                    className="logo-cont"
+                    onClick={() => navigate(isAuthenticated ? "/Panel" : "/")}
+                    aria-label={isAuthenticated ? t("navigation.panel") : t("navigation.home")}
+                >
                     <img src={utnLogo} alt="UTN" />
                     <label id="UTlabel">{t("common.university")}</label>
-                </div>
+                </button>
 
                 <button
                     className="menu-toggle"
@@ -110,7 +115,7 @@ function Layout({ children, variant = "default", contentClassName = "" }) {
                                                 </NavLink>
                                             </li>
                                             <li><NavLink to="/Justificantes" onClick={cerrarMenu}>{t("navigation.excuses")}</NavLink></li>
-                                            {esTutor && (
+                                            {(esAlumno || esTutor) && (
                                                 <li>
                                                     <NavLink to="/Seguimientos" onClick={cerrarMenu}>
                                                         {t("navigation.followup")}
@@ -214,7 +219,7 @@ function Layout({ children, variant = "default", contentClassName = "" }) {
                 </nav>
             </header>
 
-            <div className={variant === "home" ? contentClassName : `main-content ${contentClassName}`.trim()}>
+            <div className={variant === "home" ? `home-content ${contentClassName}`.trim() : `main-content ${contentClassName}`.trim()}>
                 {children}
             </div>
 

@@ -4,6 +4,18 @@
 
 .backup-head {
     align-items: flex-start;
+    text-align: left;
+}
+
+.backup-head > .MuiBox-root:first-child {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.backup-head .admin-chip {
+    margin: 0;
 }
 
 .backup-stats {
@@ -87,6 +99,14 @@
 .backup-list-item p,
 .backup-list-item span {
     overflow-wrap: anywhere;
+}
+
+.backup-scroll-list {
+    max-height: min(52svh, 520px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    padding-right: 4px;
 }
 
 @media (max-width: 980px) {

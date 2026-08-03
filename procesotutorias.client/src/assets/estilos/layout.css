@@ -19,10 +19,32 @@ body, #root {
     flex: 1;
 }
 
+.home-content {
+    width: 100%;
+    flex: 1;
+}
+
+.home-content + footer {
+    margin-top: 0;
+}
+
 .logo-cont {
     display: flex;
     align-items: center;
     gap: 5px;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+}
+
+.logo-cont:focus-visible {
+    outline: 2px solid #22d47b;
+    outline-offset: 3px;
+    border-radius: 6px;
 }
 
     .logo-cont img {
