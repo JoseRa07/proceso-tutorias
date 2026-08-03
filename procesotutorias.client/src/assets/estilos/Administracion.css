@@ -1,0 +1,215 @@
+.admin-cont {
+    width: 95vw;
+    min-height: calc(100vh - 120px);
+    margin: 0 auto 20px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.main-content.admin-layout-gradient {
+    padding-bottom: 0;
+    background: linear-gradient(
+        to bottom,
+        #fff 0%,
+        #fff 58%,
+        rgba(34,212,123,0.08) 76%,
+        rgba(34,212,123,0.28) 100%
+    );
+}
+
+.main-content.admin-layout-gradient + footer {
+    margin-top: 0;
+}
+
+.admin-head,
+.admin-panel {
+    background: #fff;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.admin-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    background:
+        linear-gradient(135deg, rgba(32,168,94,0.12), rgba(255,255,255,0) 46%),
+        #fff;
+    border: 1px solid rgba(18,25,39,0.06);
+    text-align: left;
+}
+
+.admin-head > :first-child {
+    min-width: 0;
+}
+
+.admin-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.admin-grid {
+    display: grid;
+    grid-template-columns: minmax(280px, 380px) 1fr;
+    gap: 15px;
+    align-items: start;
+}
+
+.admin-form {
+    display: grid;
+    gap: 12px;
+}
+
+.admin-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    max-height: clamp(360px, calc(100svh - 280px), 640px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    padding: 2px 5px 2px 2px;
+}
+
+.admin-item {
+    flex: 0 0 auto;
+    border-left: 8px solid #20A85E;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.admin-item.inactivo {
+    border-left-color: #ff9800;
+}
+
+.admin-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+}
+
+.admin-row > :first-child {
+    min-width: 0;
+    text-align: left;
+}
+
+.admin-row > :last-child {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2px;
+}
+
+.admin-row > :last-child .MuiButton-root {
+    flex: 0 0 auto;
+}
+
+.admin-name-line {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.admin-name-line .MuiTypography-root {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.admin-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+    color: #596170;
+    font-size: 13px;
+}
+
+.admin-meta > span:not(.admin-chip) {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.admin-empty {
+    padding: 18px;
+    text-align: center;
+    color: #596170;
+}
+
+.admin-chip {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 16px;
+    padding: 4px 10px;
+    background: #eef7f1;
+    color: #1B5E20;
+    font-size: 12px;
+    font-weight: 600;
+    max-width: 100%;
+    line-height: 1.25;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: left;
+}
+
+.admin-chip.warning {
+    background: #fff4e5;
+    color: #a05a00;
+}
+
+@media (max-width: 900px) {
+    .admin-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-lista {
+        max-height: min(62svh, 620px);
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-cont {
+        padding: 10px;
+        gap: 10px;
+    }
+
+    .admin-head,
+    .admin-row {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-head {
+        align-items: flex-start;
+    }
+
+    .admin-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .admin-row > :last-child {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-lista {
+        max-height: 68svh;
+    }
+
+    .admin-item .MuiCardContent-root {
+        padding: 12px !important;
+    }
+}

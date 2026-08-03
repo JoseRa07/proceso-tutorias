@@ -1,0 +1,290 @@
+USE [SistemaTutorias]
+GO
+/****** Object:  Table [dbo].[Alumno]    Script Date: 14/04/2026 05:44:17 a. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Alumno](
+	[id_alumno] [int] IDENTITY(1,1) NOT NULL,
+	[id_usuario] [int] NOT NULL,
+	[matricula] [varchar](50) NOT NULL,
+	[id_grupo] [int] NOT NULL,
+PRIMARY KEY CLUSTERED
+(
+	[id_alumno] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+UNIQUE NONCLUSTERED
+(
+	[matricula] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Carrera]    Script Date: 14/04/2026 05:44:17 a. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Carrera](
+	[id_carrera] [int] IDENTITY(1,1) NOT NULL,
+	[nombre] [varchar](100) NOT NULL,
+	[siglas] [varchar](10) NOT NULL,
+PRIMARY KEY CLUSTERED
+(
+	[id_carrera] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Cuatrimestre]    Script Date: 14/04/2026 05:44:17 a. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Cuatrimestre](
+	[id_cuatrimestre] [int] IDENTITY(1,1) NOT NULL,
+	[nombre] [varchar](50) NOT NULL,
+	[activo] [bit] NOT NULL,
+PRIMARY KEY CLUSTERED
+(
+	[id_cuatrimestre] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Grupo]    Script Date: 14/04/2026 05:44:17 a. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Grupo](
+	[id_grupo] [int] IDENTITY(1,1) NOT NULL,
+	[nombre_grupo] [varchar](50) NOT NULL,
+	[id_tutor] [int] NULL,
+	[id_carrera] [int] NOT NULL,
+PRIMARY KEY CLUSTERED
+(
+	[id_grupo] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[GrupoCuatrimestre]    Script Date: 14/04/2026 05:44:17 a. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[GrupoCuatrimestre](
+	[id_grupo_cuatrimestre] [int] IDENTITY(1,1) NOT NULL,
+	[id_grupo] [int] NOT NULL,
+	[id_cuatrimestre] [int] NOT NULL,
+	[activo] [bit] NULL,
+PRIMARY KEY CLUSTERED
+(
+	[id_grupo_cuatrimestre] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Justificante]    Script Date: 14/04/2026 05:44:17 a. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Justificante](
+	[id_justificante] [int] IDENTITY(1,1) NOT NULL,
+	[id_alumno] [int] NOT NULL,
+	[fecha] [date] NOT NULL,
+	[descripcion] [varchar](max) NOT NULL,
+	[estado] [varchar](50) NOT NULL,
+	[fecha_registro] [datetime] NULL,
+	[id_cuatrimestre] [int] NOT NULL,
+PRIMARY KEY CLUSTERED
+(
+	[id_justificante] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[JustificanteArchivo]    Script Date: 14/04/2026 05:44:17 a. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[JustificanteArchivo](
+	[id_archivo] [int] IDENTITY(1,1) NOT NULL,
+	[id_justificante] [int] NOT NULL,
+	[url] [varchar](500) NOT NULL,
+PRIMARY KEY CLUSTERED
+(
+	[id_archivo] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Maestro]    Script Date: 14/04/2026 05:44:17 a. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Maestro](
+	[id_maestro] [int] IDENTITY(1,1) NOT NULL,
+	[id_usuario] [int] NOT NULL,
+	[cod_empleado] [varchar](50) NOT NULL,
+	[vigencia] [date] NOT NULL,
+PRIMARY KEY CLUSTERED
+(
+	[id_maestro] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+UNIQUE NONCLUSTERED
+(
+	[cod_empleado] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[rol]    Script Date: 14/04/2026 05:44:17 a. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[rol](
+	[id_rol] [int] IDENTITY(1,1) NOT NULL,
+	[nombre] [varchar](50) NOT NULL,
+PRIMARY KEY CLUSTERED
+(
+	[id_rol] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[sesion_tutoria]    Script Date: 14/04/2026 05:44:17 a. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[sesion_tutoria](
+	[id_sesion] [int] IDENTITY(1,1) NOT NULL,
+	[id_tutoria] [int] NOT NULL,
+	[fecha] [date] NOT NULL,
+	[hora_ini] [time](7) NOT NULL,
+	[hora_fin] [time](7) NOT NULL,
+	[motivo] [varchar](255) NOT NULL,
+	[pts_relevantes] [varchar](max) NULL,
+	[compromisos_acuerdos] [varchar](max) NULL,
+	[estado] [varchar](50) NOT NULL,
+PRIMARY KEY CLUSTERED
+(
+	[id_sesion] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Tutor]    Script Date: 14/04/2026 05:44:17 a. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Tutor](
+	[id_tutor] [int] IDENTITY(1,1) NOT NULL,
+	[id_maestro] [int] NOT NULL,
+PRIMARY KEY CLUSTERED
+(
+	[id_tutor] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Tutoria]    Script Date: 14/04/2026 05:44:17 a. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Tutoria](
+	[id_tutoria] [int] IDENTITY(1,1) NOT NULL,
+	[id_alumno] [int] NOT NULL,
+	[id_tutor] [int] NOT NULL,
+	[id_grupo_cuatrimestre] [int] NOT NULL,
+PRIMARY KEY CLUSTERED
+(
+	[id_tutoria] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Usuario]    Script Date: 14/04/2026 05:44:17 a. m. ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Usuario](
+	[id_usuario] [int] IDENTITY(1,1) NOT NULL,
+	[nombre] [varchar](100) NOT NULL,
+	[apellidos] [varchar](100) NOT NULL,
+	[correo] [varchar](150) NOT NULL,
+	[telefono] [varchar](20) NULL,
+	[contrasena_hash] [varchar](255) NOT NULL,
+	[id_rol] [int] NOT NULL,
+	[req_cambio_contra] [bit] NOT NULL,
+PRIMARY KEY CLUSTERED
+(
+	[id_usuario] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+UNIQUE NONCLUSTERED
+(
+	[correo] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[Cuatrimestre] ADD  DEFAULT ((1)) FOR [activo]
+GO
+ALTER TABLE [dbo].[GrupoCuatrimestre] ADD  DEFAULT ((1)) FOR [activo]
+GO
+ALTER TABLE [dbo].[Justificante] ADD  DEFAULT (getdate()) FOR [fecha_registro]
+GO
+ALTER TABLE [dbo].[Justificante] ADD  DEFAULT ((1)) FOR [id_cuatrimestre]
+GO
+ALTER TABLE [dbo].[Tutoria] ADD  DEFAULT ((1)) FOR [id_grupo_cuatrimestre]
+GO
+ALTER TABLE [dbo].[Usuario] ADD  DEFAULT ((1)) FOR [req_cambio_contra]
+GO
+ALTER TABLE [dbo].[Alumno]  WITH CHECK ADD FOREIGN KEY([id_grupo])
+REFERENCES [dbo].[Grupo] ([id_grupo])
+GO
+ALTER TABLE [dbo].[Alumno]  WITH CHECK ADD FOREIGN KEY([id_usuario])
+REFERENCES [dbo].[Usuario] ([id_usuario])
+GO
+ALTER TABLE [dbo].[Grupo]  WITH CHECK ADD FOREIGN KEY([id_carrera])
+REFERENCES [dbo].[Carrera] ([id_carrera])
+GO
+ALTER TABLE [dbo].[Grupo]  WITH CHECK ADD FOREIGN KEY([id_tutor])
+REFERENCES [dbo].[Tutor] ([id_tutor])
+GO
+ALTER TABLE [dbo].[GrupoCuatrimestre]  WITH CHECK ADD FOREIGN KEY([id_cuatrimestre])
+REFERENCES [dbo].[Cuatrimestre] ([id_cuatrimestre])
+GO
+ALTER TABLE [dbo].[GrupoCuatrimestre]  WITH CHECK ADD FOREIGN KEY([id_grupo])
+REFERENCES [dbo].[Grupo] ([id_grupo])
+GO
+ALTER TABLE [dbo].[Justificante]  WITH CHECK ADD FOREIGN KEY([id_alumno])
+REFERENCES [dbo].[Alumno] ([id_alumno])
+GO
+ALTER TABLE [dbo].[Justificante]  WITH CHECK ADD FOREIGN KEY([id_cuatrimestre])
+REFERENCES [dbo].[Cuatrimestre] ([id_cuatrimestre])
+GO
+ALTER TABLE [dbo].[JustificanteArchivo]  WITH CHECK ADD FOREIGN KEY([id_justificante])
+REFERENCES [dbo].[Justificante] ([id_justificante])
+GO
+ALTER TABLE [dbo].[Maestro]  WITH CHECK ADD FOREIGN KEY([id_usuario])
+REFERENCES [dbo].[Usuario] ([id_usuario])
+GO
+ALTER TABLE [dbo].[sesion_tutoria]  WITH CHECK ADD FOREIGN KEY([id_tutoria])
+REFERENCES [dbo].[Tutoria] ([id_tutoria])
+GO
+ALTER TABLE [dbo].[Tutor]  WITH CHECK ADD FOREIGN KEY([id_maestro])
+REFERENCES [dbo].[Maestro] ([id_maestro])
+GO
+ALTER TABLE [dbo].[Tutoria]  WITH CHECK ADD FOREIGN KEY([id_alumno])
+REFERENCES [dbo].[Alumno] ([id_alumno])
+GO
+ALTER TABLE [dbo].[Tutoria]  WITH CHECK ADD FOREIGN KEY([id_grupo_cuatrimestre])
+REFERENCES [dbo].[GrupoCuatrimestre] ([id_grupo_cuatrimestre])
+GO
+ALTER TABLE [dbo].[Tutoria]  WITH CHECK ADD FOREIGN KEY([id_grupo_cuatrimestre])
+REFERENCES [dbo].[GrupoCuatrimestre] ([id_grupo_cuatrimestre])
+GO
+ALTER TABLE [dbo].[Tutoria]  WITH CHECK ADD FOREIGN KEY([id_tutor])
+REFERENCES [dbo].[Tutor] ([id_tutor])
+GO
+ALTER TABLE [dbo].[Usuario]  WITH CHECK ADD FOREIGN KEY([id_rol])
+REFERENCES [dbo].[rol] ([id_rol])
+GO

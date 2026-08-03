@@ -1,0 +1,124 @@
+.backup-cont {
+    gap: 18px;
+}
+
+.backup-head {
+    align-items: flex-start;
+    text-align: left;
+}
+
+.backup-head > .MuiBox-root:first-child {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.backup-head .admin-chip {
+    margin: 0;
+}
+
+.backup-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 15px;
+}
+
+.backup-stats .MuiCard-root,
+.backup-card {
+    border-radius: 16px;
+    border: 1px solid rgba(18,25,39,0.06);
+    box-shadow: 0 8px 24px rgba(18,25,39,0.08);
+}
+
+.backup-stats .MuiCardContent-root {
+    min-height: 118px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.backup-stats svg,
+.backup-card-title svg {
+    color: #20A85E;
+}
+
+.backup-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
+    align-items: stretch;
+}
+
+.backup-restore {
+    grid-column: 1 / -1;
+}
+
+.backup-card-title {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.backup-card .MuiButton-contained {
+    background-color: #20A85E;
+}
+
+.backup-card .MuiButton-contained:hover {
+    background-color: #1B5E20;
+}
+
+.backup-card .MuiButton-contained.MuiButton-colorWarning {
+    background-color: #f59e0b;
+}
+
+.backup-card .MuiButton-contained.MuiButton-colorWarning:hover {
+    background-color: #b45309;
+}
+
+.backup-lists {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    align-items: start;
+}
+
+.backup-list-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    padding: 12px;
+    border-radius: 12px;
+    background:
+        linear-gradient(135deg, rgba(32,168,94,0.07), rgba(255,255,255,0) 55%),
+        #fff;
+    border: 1px solid rgba(18,25,39,0.08);
+}
+
+.backup-list-item p,
+.backup-list-item span {
+    overflow-wrap: anywhere;
+}
+
+.backup-scroll-list {
+    max-height: min(52svh, 520px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    padding-right: 4px;
+}
+
+@media (max-width: 980px) {
+    .backup-stats,
+    .backup-grid,
+    .backup-lists {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .backup-list-item {
+        grid-template-columns: 1fr;
+    }
+}

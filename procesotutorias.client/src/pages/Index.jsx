@@ -1,79 +1,49 @@
-import "../assets/estilos/layout.css";
-import "../assets/estilos/inicio.css";
-import "../assets/estilos/login.css";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
-import utnLogo from "../assets/imagenes/UTN.png";
+import "../assets/estilos/inicio.css";
+import Layout from "../componentes/layout";
+import Login from "../componentes/Auth/Login";
+import { useI18n } from "../i18n/I18nContext";
 
 function Index() {
+    const navigate = useNavigate();
+    const { t } = useI18n();
+
+    const [showLogin, setShowLogin] = useState(false);
+    const [usuario] = useState(() => {
+        const usuarioStorage = localStorage.getItem("usuario");
+        return usuarioStorage ? JSON.parse(usuarioStorage) : null;
+    });
+
+    useEffect(() => {
+        if (usuario) {
+            navigate("/Panel");
+        }
+    }, [navigate, usuario]);
+
     return (
-        <>
-            <header>
-                <img src={utnLogo} alt="UTN" />
-                <h1>Universidad Tecnológica de Nayarit</h1>
-
-                <nav className="menu">
-                    <ul>
-                        <li>
-                            <a href="/">Inicio</a>
-                        </li>
-                        <li>
-                            <a href="/tutoria">Tutoría</a>
-                        </li>
-                    </ul>
-                </nav>
-            </header>
-
+        <Layout variant="home">
             <div className="container">
                 <div className="inicio-cont">
                     <div className="cont">
-                        <h1>Bienvenido al Sistema de Tutorías</h1>
-                        <div>
-                            <a href="/login" className="btn">
-                                Iniciar Sesión
-                            </a>
-                        </div>
+                        <h1>{t("auth.welcomeHome")}</h1>
+
+                        <button
+                            className="btn"
+                            onClick={() => setShowLogin(true)}
+                        >
+                            {t("auth.signIn")}
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <footer>
-                <div className="footer-cont">
-                    <div className="footerC">
-                        <h3>Contacto</h3>
-                        <p>
-                            Dirección: Carretera Tepic-Compostela Km 9, C.P. 63173, Nayarit,
-                            México.
-                        </p>
-                        <p>Teléfono: (311) 211 9400</p>
-                        <p>Email: contacto@utnay.edu.mx</p>
-                    </div>
-
-                    <div className="footerC">
-                        <h3>Redes Sociales</h3>
-                        <a href="#" target="_blank" rel="noreferrer">
-                            Facebook
-                        </a>
-                        <a href="#" target="_blank" rel="noreferrer">
-                            Twitter
-                        </a>
-                        <a href="#" target="_blank" rel="noreferrer">
-                            Instagram
-                        </a>
-                    </div>
-
-                    <div className="footerC">
-                        <h3>Enlaces Rápidos</h3>
-                    </div>
-                </div>
-
-                <div className="footerF">
-                    <p>
-                        © 2023 Universidad Tecnológica de Nayarit. Todos los derechos
-                        reservados.
-                    </p>
-                </div>
-            </footer>
-        </>
+            <Login
+                isOpen={showLogin}
+                onClose={() => setShowLogin(false)}
+            />
+        </Layout>
     );
 }
 

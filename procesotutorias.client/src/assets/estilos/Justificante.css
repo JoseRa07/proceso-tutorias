@@ -1,0 +1,82 @@
+.jc {
+    width: 100%;
+    max-width: 500px;
+    padding: 10px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+    /* descripcion */
+    .jc textarea {
+        height: 60px !important;
+        overflow: auto !important;
+    }
+
+/* file */
+.jf {
+    margin-top: 15px;
+}
+
+    .jf input {
+        display: none;
+    }
+
+.jf-l {
+    display: inline-block;
+    background: #22d47b;
+    color: #fff;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: .2s;
+}
+
+    .jf-l:hover {
+        background: #1bb869;
+    }
+
+/* imgs */
+.jimgs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    max-height: 180px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.jimg {
+    width: 80px;
+    height: 80px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #ddd;
+    cursor: pointer;
+    transition: .2s;
+    flex-shrink: 0;
+}
+
+    .jimg:hover {
+        transform: scale(1.05);
+    }
+
+    .jimg img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+/* botones */
+.jbtns {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 480px) {
+    .jimg {
+        width: 70px;
+        height: 70px;
+    }
+}
