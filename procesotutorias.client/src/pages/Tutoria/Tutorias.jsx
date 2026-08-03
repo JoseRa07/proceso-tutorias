@@ -9,6 +9,7 @@ import {
     Box,
     Typography,
     Card,
+    CardActionArea,
     CardContent,
     Button,
     IconButton,
@@ -179,24 +180,33 @@ function Tutorias() {
                         ) : (
                             tutorias.map((tutoria) => (
                                 <Card key={tutoria.idSesion} className={`tutoria-item ${getClaseEstado(tutoria.estado)}`}>
-                                    <CardContent className="tutorias-c" sx={{ padding: "0px !important" }}>
-                                        <div className="tutoria-row">
-                                            <div className="tutoria-izq">
-                                                <strong>{tutoria.motivo}</strong>
-                                            </div>
+                                    <CardActionArea
+                                        className="tutoria-card-action"
+                                        onClick={() => abrirTutoria(tutoria.idSesion)}
+                                        aria-label={`${t("tutoring.open")}: ${tutoria.motivo}`}
+                                    >
+                                        <CardContent className="tutorias-c" sx={{ padding: "0px !important" }}>
+                                            <div className="tutoria-row">
+                                                <div className="tutoria-izq">
+                                                    <strong>{tutoria.motivo}</strong>
+                                                    {tutoria.nombreAlumno && (
+                                                        <Typography variant="body2" className="tutoria-alumno">
+                                                            {t("common.student")}: {tutoria.nombreAlumno}
+                                                        </Typography>
+                                                    )}
+                                                </div>
 
-                                            <div className="tutoria-der">
-                                                <span>{formatDate(tutoria.fecha)}</span>
-                                                <span>{tutoria.horaIni} - {tutoria.horaFin}</span>
-                                            </div>
+                                                <div className="tutoria-der">
+                                                    <span>{formatDate(tutoria.fecha)}</span>
+                                                    <span>{tutoria.horaIni} - {tutoria.horaFin}</span>
+                                                </div>
 
-                                            <div className="tutoria-ctrl">
-                                                <IconButton onClick={() => abrirTutoria(tutoria.idSesion)} aria-label={t("tutoring.open")}>
+                                                <div className="tutoria-ctrl" aria-hidden="true">
                                                     <Arrow />
-                                                </IconButton>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </CardContent>
+                                        </CardContent>
+                                    </CardActionArea>
                                 </Card>
                             ))
                         )}

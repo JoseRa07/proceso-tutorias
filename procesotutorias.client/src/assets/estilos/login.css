@@ -73,6 +73,48 @@
         margin-bottom: 4px;
     }
 
+    .formulario .login-email-field {
+        width: 100%;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: stretch;
+        overflow: hidden;
+        border: 1px solid var(--principal);
+        border-radius: 5px;
+        box-sizing: border-box;
+        background: #fff;
+    }
+
+    .formulario .login-email-field:focus-within,
+    .formulario .login-email-field:hover {
+        border-color: #22d47b;
+    }
+
+    .formulario .login-email-field.input-error {
+        margin-bottom: 4px;
+        border-color: #d32f2f;
+    }
+
+    .formulario .login-email-field input {
+        min-width: 0;
+        flex: 1 1 auto;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+    }
+
+    .formulario .login-email-field span {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        padding: 0 10px;
+        color: #4b5563;
+        background: #f3f6f4;
+        border-left: 1px solid #cbd5d1;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
     .formulario .field-error {
         display: block;
         margin: 0 0 12px;

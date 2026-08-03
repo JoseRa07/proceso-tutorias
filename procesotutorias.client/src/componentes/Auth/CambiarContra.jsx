@@ -4,6 +4,8 @@ import { API_URL } from "../../api";
 import { useI18n } from "../../i18n/I18nContext";
 import { validatePassword } from "../../utils/validation";
 import { storeAuthSession } from "../../auth/authFetch";
+import { getAuthSession } from "../../auth/session";
+import { getApiErrorMessage, readApiJson } from "../../utils/apiErrors";
 
 function CambiarContra({ isOpen, obligatorio, onClose }) {
     const [contrasenaActual, setContrasenaActual] = useState("");
@@ -11,7 +13,7 @@ function CambiarContra({ isOpen, obligatorio, onClose }) {
     const [confirmarContra, setConfirmarContra] = useState("");
     const [error, setError] = useState("");
     const [fieldErrors, setFieldErrors] = useState({});
-    const { locale, t } = useI18n();
+    const { t } = useI18n();
 
     const resetAndClose = () => {
         setContrasenaActual("");
@@ -24,7 +26,7 @@ function CambiarContra({ isOpen, obligatorio, onClose }) {
 
     if (!isOpen) return null;
 
-    const usuario = JSON.parse(localStorage.getItem("usuario"));
+    const usuario = getAuthSession()?.user;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -46,6 +48,11 @@ function CambiarContra({ isOpen, obligatorio, onClose }) {
         setFieldErrors(errors);
         if (Object.keys(errors).length > 0) return;
 
+        if (!usuario) {
+            setError(t("common.requestFailed"));
+            return;
+        }
+
         try {
             const token = localStorage.getItem("token");
             const response = await fetch(`${API_URL}/Login/cambiar-contra`, {
@@ -63,18 +70,16 @@ function CambiarContra({ isOpen, obligatorio, onClose }) {
             });
 
             if (!response.ok) {
-                const result = await response.json().catch(() => null);
-                if (result?.message?.startsWith("[CONTRASENA_ACTUAL_INCORRECTA]")) {
+                const message = await getApiErrorMessage(response, t("common.requestFailed"));
+                if (message.startsWith("[CONTRASENA_ACTUAL_INCORRECTA]")) {
                     setError(t("auth.currentPasswordIncorrect"));
                 } else {
-                    setError(locale === "es-MX" && result?.message
-                        ? result.message
-                        : t("common.requestFailed"));
+                    setError(message);
                 }
                 return;
             }
 
-            const data = await response.json();
+            const data = await readApiJson(response, t("common.requestFailed"));
             if (!storeAuthSession(data)) {
                 setError(t("common.requestFailed"));
                 return;
@@ -87,8 +92,9 @@ function CambiarContra({ isOpen, obligatorio, onClose }) {
             resetAndClose();
 
         } catch (err) {
-            console.error(err);
-            setError(t("auth.connectionError"));
+            setError(err instanceof TypeError
+                ? t("auth.connectionError")
+                : err.message || t("common.requestFailed"));
         }
     };
 

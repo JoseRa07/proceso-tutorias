@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { API_URL } from "../api";
 import { useI18n } from "../i18n/I18nContext";
+import { readApiJson } from "../utils/apiErrors";
 
 const getHeaders = () => {
     const token = localStorage.getItem("token");
@@ -9,19 +10,6 @@ const getHeaders = () => {
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {})
     };
-};
-
-const obtenerMensajeError = async (response, fallbackMessage) => {
-    const texto = await response.text();
-
-    if (!texto) return fallbackMessage;
-
-    try {
-        const data = JSON.parse(texto);
-        return data.message || data.mensaje || texto;
-    } catch {
-        return texto;
-    }
 };
 
 const requestAdmin = async (url, options = {}, fallbackMessage) => {
@@ -33,14 +21,7 @@ const requestAdmin = async (url, options = {}, fallbackMessage) => {
         }
     });
 
-    if (!response.ok) {
-        throw new Error(await obtenerMensajeError(response, fallbackMessage));
-    }
-
-    if (response.status === 204) return null;
-
-    const texto = await response.text();
-    return texto ? JSON.parse(texto) : null;
+    return readApiJson(response, fallbackMessage);
 };
 
 export const useAdminCatalogos = () => {

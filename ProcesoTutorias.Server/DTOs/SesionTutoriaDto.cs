@@ -4,8 +4,8 @@
     {
         public int IdSesion { get; set; }
         public DateOnly Fecha { get; set; }
-        public string HoraIni { get; set; }
-        public string HoraFin { get; set; }
+        public string HoraIni { get; set; } = string.Empty;
+        public string HoraFin { get; set; } = string.Empty;
         public string Motivo { get; set; } = null!;
         public string Pts { get; set; } = null!;
         public string Acuerdos { get; set; } = null!;

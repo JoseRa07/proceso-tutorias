@@ -342,7 +342,7 @@ export default function BackupPanel() {
                             <Typography variant="h6" fontWeight={800}>{t("backups.filesTitle")}</Typography>
                             <Divider sx={{ my: 1.5 }} />
 
-                            <Stack spacing={1}>
+                            <Stack spacing={1} className="backup-scroll-list">
                                 {files.length === 0 ? (
                                     <Typography color="text.secondary">{t("backups.noFiles")}</Typography>
                                 ) : files.map((file) => (
@@ -371,7 +371,7 @@ export default function BackupPanel() {
                             <Typography variant="h6" fontWeight={800}>{t("backups.schedulesTitle")}</Typography>
                             <Divider sx={{ my: 1.5 }} />
 
-                            <Stack spacing={1}>
+                            <Stack spacing={1} className="backup-scroll-list">
                                 {jobs.length === 0 ? (
                                     <Typography color="text.secondary">{t("backups.noSchedules")}</Typography>
                                 ) : jobs.map((job) => (

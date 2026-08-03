@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProcesoTutorias.Server.Models;
 using ProcesoTutorias.Server.Services;
+using System.Text.Json;
 
 namespace ProcesoTutorias.Server.Controllers;
 
@@ -49,13 +50,25 @@ public class BackupController : ControllerBase
             var result = await _backupService.RestoreBackupAsync(req.FilePath, cancellationToken);
             return Ok(result);
         }
-        catch (Exception ex)
+        catch (FileNotFoundException)
         {
-            return BadRequest(new
-            {
-                message = "[BACKUP_RESTAURACION_ERROR] No se pudo restaurar el respaldo lógico.",
-                detail = ex.Message
-            });
+            return NotFound(new { message = "[BACKUP_NO_ENCONTRADO] El respaldo seleccionado ya no está disponible." });
+        }
+        catch (JsonException)
+        {
+            return BadRequest(new { message = "[BACKUP_FORMATO_INVALIDO] El archivo no contiene un respaldo válido." });
+        }
+        catch (KeyNotFoundException)
+        {
+            return BadRequest(new { message = "[BACKUP_FORMATO_INVALIDO] El archivo no contiene un respaldo válido." });
+        }
+        catch (InvalidDataException)
+        {
+            return BadRequest(new { message = "[BACKUP_FORMATO_INVALIDO] El archivo no contiene un respaldo válido." });
+        }
+        catch (InvalidOperationException)
+        {
+            return BadRequest(new { message = "[BACKUP_RESTAURACION_INVALIDA] No fue posible validar el respaldo seleccionado." });
         }
     }
 

@@ -2,11 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { API_URL } from "../api";
+import { useI18n } from "../i18n/I18nContext";
+import { readApiJson } from "../utils/apiErrors";
 
 export const usePanelInfo = (usuario) => {
+    const { t } = useI18n();
     const [grupo, setGrupo] = useState(null);
     const [tutorias, setTutorias] = useState([]);
     const [tutoriasAsignadas, setTutoriasAsignadas] = useState([]);
+    const [error, setError] = useState("");
 
     useEffect(() => {
         if (!usuario) return;
@@ -25,10 +29,7 @@ export const usePanelInfo = (usuario) => {
 
         const fetchJson = async (url) => {
             const response = await fetch(url, options);
-            if (!response.ok) {
-                throw new Error(`Error ${response.status} al consultar ${url}`);
-            }
-            return response.json();
+            return readApiJson(response, t("common.requestFailed"));
         };
 
         const buildTutoriaUrl = (estado) => {
@@ -49,6 +50,7 @@ export const usePanelInfo = (usuario) => {
         };
 
         const cargarPanel = async () => {
+            setError("");
             const [grupoResult, pendientesResult, completadasResult] = await Promise.allSettled([
                 fetchJson(`${API_URL}/Grupo/${usuario.id_usuario}`),
                 fetchJson(buildTutoriaUrl("PENDIENTE")),
@@ -61,21 +63,24 @@ export const usePanelInfo = (usuario) => {
                 setGrupo(grupoResult.value);
             } else {
                 setGrupo(null);
-                console.error(grupoResult.reason);
             }
 
             if (pendientesResult.status === "fulfilled") {
                 setTutoriasAsignadas(getTutorias(pendientesResult.value));
             } else {
                 setTutoriasAsignadas([]);
-                console.error(pendientesResult.reason);
             }
 
             if (completadasResult.status === "fulfilled") {
                 setTutorias(getTutorias(completadasResult.value));
             } else {
                 setTutorias([]);
-                console.error(completadasResult.reason);
+            }
+
+            const firstFailure = [grupoResult, pendientesResult, completadasResult]
+                .find((result) => result.status === "rejected");
+            if (firstFailure?.status === "rejected") {
+                setError(firstFailure.reason?.message || t("common.requestFailed"));
             }
         };
 
@@ -83,7 +88,7 @@ export const usePanelInfo = (usuario) => {
 
         return () => controller.abort();
 
-    }, [usuario]);
+    }, [t, usuario]);
 
-    return { grupo, tutorias, tutoriasAsignadas };
+    return { grupo, tutorias, tutoriasAsignadas, error };
 };

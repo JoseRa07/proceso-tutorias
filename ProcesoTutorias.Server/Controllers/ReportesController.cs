@@ -74,7 +74,18 @@ namespace ProcesoTutorias.Server.Controllers
                 JustificantesPendientes = justificantes.Count(j => j.Estado == Pendiente),
                 JustificantesAprobados = justificantes.Count(j => j.Estado == Aceptado),
                 JustificantesRechazados = justificantes.Count(j => j.Estado == Rechazado),
-                UltimaTutoria = sesiones.FirstOrDefault()?.Fecha.ToString("yyyy-MM-dd"),
+                UltimaTutoria = sesiones
+                    .Where(s => s.Estado == Completada)
+                    .OrderByDescending(s => s.Fecha)
+                    .Select(s => (DateOnly?)s.Fecha)
+                    .FirstOrDefault()?
+                    .ToString("yyyy-MM-dd"),
+                ProximaTutoria = sesiones
+                    .Where(s => s.Estado == Pendiente && s.Fecha >= DateOnly.FromDateTime(DateTime.Today))
+                    .OrderBy(s => s.Fecha)
+                    .Select(s => (DateOnly?)s.Fecha)
+                    .FirstOrDefault()?
+                    .ToString("yyyy-MM-dd"),
                 Recomendaciones = recomendaciones
             });
         }
@@ -99,6 +110,7 @@ namespace ProcesoTutorias.Server.Controllers
                 .Select(g => new GrupoResumenDto
                 {
                     Grupo = g.NombreGrupo,
+                    Carrera = g.IdCarreraNavigation.Siglas,
                     TotalAlumnos = g.Alumnos.Count,
                     TotalTutorias = _context.SesionTutoria.Count(s =>
                         s.Estado != Inactivo &&
@@ -106,8 +118,23 @@ namespace ProcesoTutorias.Server.Controllers
                     TutoriasPendientes = _context.SesionTutoria.Count(s =>
                         s.Estado == Pendiente &&
                         s.IdTutoriaNavigation.IdAlumnoNavigation.IdGrupo == g.IdGrupo),
+                    TutoriasCompletadas = _context.SesionTutoria.Count(s =>
+                        s.Estado == Completada &&
+                        s.IdTutoriaNavigation.IdAlumnoNavigation.IdGrupo == g.IdGrupo),
+                    TutoriasEnEdicion = _context.SesionTutoria.Count(s =>
+                        s.Estado == Edicion &&
+                        s.IdTutoriaNavigation.IdAlumnoNavigation.IdGrupo == g.IdGrupo),
                     TotalJustificantes = _context.Justificantes.Count(j =>
                         j.Estado != Inactivo &&
+                        j.IdAlumnoNavigation.IdGrupo == g.IdGrupo),
+                    JustificantesPendientes = _context.Justificantes.Count(j =>
+                        j.Estado == Pendiente &&
+                        j.IdAlumnoNavigation.IdGrupo == g.IdGrupo),
+                    JustificantesAprobados = _context.Justificantes.Count(j =>
+                        j.Estado == Aceptado &&
+                        j.IdAlumnoNavigation.IdGrupo == g.IdGrupo),
+                    JustificantesRechazados = _context.Justificantes.Count(j =>
+                        j.Estado == Rechazado &&
                         j.IdAlumnoNavigation.IdGrupo == g.IdGrupo)
                 })
                 .ToListAsync();
@@ -154,8 +181,8 @@ namespace ProcesoTutorias.Server.Controllers
                 JustificantesPendientes = justificantes.Count(j => j.Estado == Pendiente),
                 JustificantesAprobados = justificantes.Count(j => j.Estado == Aceptado),
                 JustificantesRechazados = justificantes.Count(j => j.Estado == Rechazado),
-                Grupos = grupos.OrderByDescending(g => g.TutoriasPendientes).ThenByDescending(g => g.TotalJustificantes).Take(8).ToList(),
-                Tutores = tutores.OrderByDescending(t => t.TutoriasPendientes).ThenByDescending(t => t.TotalAlumnos).Take(8).ToList(),
+                Grupos = grupos.OrderByDescending(g => g.TutoriasPendientes).ThenByDescending(g => g.TotalJustificantes).ToList(),
+                Tutores = tutores.OrderByDescending(t => t.TutoriasPendientes).ThenByDescending(t => t.TotalAlumnos).ToList(),
                 Recomendaciones = recomendaciones
             });
         }
@@ -191,7 +218,9 @@ namespace ProcesoTutorias.Server.Controllers
 
             var sesiones = await _context.SesionTutoria
                 .AsNoTracking()
-                .Where(s => s.IdTutoriaNavigation.IdTutor == tutor.IdTutor && s.Estado != Inactivo)
+                .Where(s =>
+                    alumnoIds.Contains(s.IdTutoriaNavigation.IdAlumno) &&
+                    s.Estado != Inactivo)
                 .ToListAsync();
 
             var justificantes = await _context.Justificantes
@@ -209,16 +238,16 @@ namespace ProcesoTutorias.Server.Controllers
                     Nombre = a.IdUsuarioNavigation.Nombre + " " + a.IdUsuarioNavigation.Apellidos,
                     TotalTutorias = _context.SesionTutoria.Count(s =>
                         s.Estado != Inactivo &&
-                        s.IdTutoriaNavigation.IdAlumno == a.IdAlumno &&
-                        s.IdTutoriaNavigation.IdTutor == tutor.IdTutor),
+                        s.IdTutoriaNavigation.IdAlumno == a.IdAlumno),
                     TutoriasPendientes = _context.SesionTutoria.Count(s =>
                         s.Estado == Pendiente &&
-                        s.IdTutoriaNavigation.IdAlumno == a.IdAlumno &&
-                        s.IdTutoriaNavigation.IdTutor == tutor.IdTutor),
+                        s.IdTutoriaNavigation.IdAlumno == a.IdAlumno),
                     TutoriasCompletadas = _context.SesionTutoria.Count(s =>
                         s.Estado == Completada &&
-                        s.IdTutoriaNavigation.IdAlumno == a.IdAlumno &&
-                        s.IdTutoriaNavigation.IdTutor == tutor.IdTutor),
+                        s.IdTutoriaNavigation.IdAlumno == a.IdAlumno),
+                    TutoriasEnEdicion = _context.SesionTutoria.Count(s =>
+                        s.Estado == Edicion &&
+                        s.IdTutoriaNavigation.IdAlumno == a.IdAlumno),
                     TotalJustificantes = _context.Justificantes.Count(j =>
                         j.IdAlumno == a.IdAlumno &&
                         j.Estado != Inactivo)

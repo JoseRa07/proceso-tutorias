@@ -26,6 +26,15 @@ const asText = (value, empty = "-") => {
 
 const asNumber = (value) => Number.isFinite(Number(value)) ? Number(value) : 0;
 
+const formatDateValue = (value, locale, empty) => {
+    if (!value) return empty;
+    const normalized = /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00` : value;
+    const date = new Date(normalized);
+    return Number.isNaN(date.getTime())
+        ? asText(value, empty)
+        : new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(date);
+};
+
 const setTextColor = (doc, color) => doc.setTextColor(...color);
 const setFillColor = (doc, color) => doc.setFillColor(...color);
 const setDrawColor = (doc, color) => doc.setDrawColor(...color);
@@ -202,6 +211,52 @@ const addTable = (context, columnsDefinition, rows, emptyMessage) => {
     context.y += 6;
 };
 
+const addHorizontalBarChart = (context, title, rows, emptyMessage) => {
+    const chartRows = (rows || []).filter((row) => row?.label).slice(0, 8);
+    const rowHeight = 11;
+    ensureSpace(context, 8 + (chartRows.length ? chartRows.length * rowHeight + 5 : 12));
+    addSectionTitle(context, title);
+
+    if (!chartRows.length) {
+        setTextColor(context.doc, COLORS.muted);
+        context.doc.setFont("helvetica", "italic");
+        context.doc.setFontSize(8.2);
+        context.doc.text(emptyMessage, PAGE.margin, context.y + 4);
+        context.y += 10;
+        return;
+    }
+
+    const { doc } = context;
+    const labelWidth = 60;
+    const barWidth = 99;
+    const barX = PAGE.margin + labelWidth;
+    const maximum = Math.max(1, ...chartRows.map((row) => asNumber(row.value)));
+
+    chartRows.forEach((row) => {
+        const value = asNumber(row.value);
+        const width = value > 0 ? Math.max(2, (value / maximum) * barWidth) : 0;
+        const label = doc.splitTextToSize(asText(row.label), labelWidth - 4)[0];
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7.5);
+        setTextColor(doc, COLORS.ink);
+        doc.text(label, PAGE.margin, context.y + 5.5);
+
+        setFillColor(doc, COLORS.stripe);
+        doc.roundedRect(barX, context.y + 1.6, barWidth, 5.2, 1.2, 1.2, "F");
+        if (width > 0) {
+            setFillColor(doc, row.color || COLORS.green);
+            doc.roundedRect(barX, context.y + 1.6, width, 5.2, 1.2, 1.2, "F");
+        }
+
+        doc.setFont("helvetica", "bold");
+        doc.text(String(value), PAGE.width - PAGE.margin, context.y + 5.5, { align: "right" });
+        context.y += rowHeight;
+    });
+
+    context.y += 4;
+};
+
 const addRecommendations = (context, recommendations, t, translateText) => {
     addSectionTitle(context, t("reports.recommendations"));
     const items = recommendations?.length
@@ -245,6 +300,16 @@ const addTutoringStatus = (context, report, t) => {
         ],
         t("reports.noData")
     );
+    addHorizontalBarChart(
+        context,
+        t("reports.charts.tutoringTitle"),
+        [
+            { label: t("reports.metrics.completed"), value: report.tutoriasCompletadas, color: COLORS.green },
+            { label: t("reports.metrics.pending"), value: report.tutoriasPendientes, color: [228, 148, 32] },
+            { label: t("reports.editing"), value: report.tutoriasEnEdicion, color: [79, 124, 172] }
+        ],
+        t("reports.noData")
+    );
 };
 
 const addExcuseStatus = (context, report, t) => {
@@ -265,9 +330,19 @@ const addExcuseStatus = (context, report, t) => {
         ],
         t("reports.noData")
     );
+    addHorizontalBarChart(
+        context,
+        t("reports.charts.excusesTitle"),
+        [
+            { label: t("reports.pdf.approved"), value: report.justificantesAprobados, color: COLORS.green },
+            { label: t("reports.metrics.pending"), value: report.justificantesPendientes, color: [228, 148, 32] },
+            { label: t("reports.pdf.rejected"), value: report.justificantesRechazados, color: [201, 75, 69] }
+        ],
+        t("reports.noData")
+    );
 };
 
-const addOverview = (context, user, report, t, translateText) => {
+const addOverview = (context, user, report, locale, t, translateText) => {
     const rowsByRole = {
         1: [
             { metric: t("reports.metrics.users"), value: asNumber(report.totalUsuarios) },
@@ -278,7 +353,8 @@ const addOverview = (context, user, report, t, translateText) => {
         2: [
             { metric: t("reports.pdf.name"), value: asText(report.nombre) },
             { metric: t("reports.studentId"), value: asText(report.matricula) },
-            { metric: t("reports.lastSession"), value: asText(report.ultimaTutoria, t("common.noRecord")) }
+            { metric: t("reports.lastSession"), value: formatDateValue(report.ultimaTutoria, locale, t("common.noRecord")) },
+            { metric: t("reports.nextSession"), value: formatDateValue(report.proximaTutoria, locale, t("common.noRecord")) }
         ],
         3: [
             { metric: t("reports.pdf.tutor"), value: asText(report.nombreTutor) },
@@ -305,64 +381,111 @@ const addOverview = (context, user, report, t, translateText) => {
     );
 };
 
-const addAdminTables = (context, report, t) => {
+const addAdminTables = (context, report, module, t) => {
     addSectionTitle(context, t("reports.groupsAttention"));
-    addTable(
-        context,
-        [
-            { key: "grupo", label: t("reports.pdf.group"), width: 48 },
+    const isExcuses = module === "justificantes";
+    const groupColumns = isExcuses
+        ? [
+            { key: "grupo", label: t("reports.pdf.group"), width: 40 },
+            { key: "carrera", label: t("reports.pdf.program"), width: 28 },
             { key: "totalAlumnos", label: t("reports.metrics.students"), width: 30, align: "right" },
-            { key: "totalTutorias", label: t("reports.metrics.sessions"), width: 34, align: "right" },
-            { key: "tutoriasPendientes", label: t("reports.metrics.pending"), width: 32, align: "right" },
-            { key: "totalJustificantes", label: t("reports.metrics.excuses"), width: 38, align: "right" }
-        ],
-        report.grupos,
+            { key: "totalJustificantes", label: t("reports.metrics.excuses"), width: 42, align: "right" },
+            { key: "justificantesPendientes", label: t("reports.metrics.pending"), width: 42, align: "right" }
+        ]
+        : [
+            { key: "grupo", label: t("reports.pdf.group"), width: 43 },
+            { key: "carrera", label: t("reports.pdf.program"), width: 35 },
+            { key: "totalAlumnos", label: t("reports.metrics.students"), width: 32, align: "right" },
+            { key: "totalTutorias", label: t("reports.metrics.sessions"), width: 36, align: "right" },
+            { key: "tutoriasPendientes", label: t("reports.metrics.pending"), width: 36, align: "right" }
+        ];
+    addTable(context, groupColumns, report.grupos, t("reports.noData"));
+    addHorizontalBarChart(
+        context,
+        isExcuses
+            ? t("reports.charts.groupExcuseCoverageTitle")
+            : t("reports.groupsAttention"),
+        (report.grupos || []).map((group) => ({
+            label: group.carrera ? `${group.grupo} - ${group.carrera}` : group.grupo,
+            value: isExcuses ? group.justificantesPendientes : group.tutoriasPendientes
+        })),
         t("reports.noData")
     );
 
-    addSectionTitle(context, t("reports.tutorWorkload"));
-    addTable(
-        context,
-        [
-            { key: "nombreTutor", label: t("reports.pdf.tutor"), width: 62 },
-            { key: "totalGrupos", label: t("reports.metrics.groups"), width: 28, align: "right" },
-            { key: "totalAlumnos", label: t("reports.metrics.students"), width: 30, align: "right" },
-            { key: "totalTutorias", label: t("reports.metrics.sessions"), width: 32, align: "right" },
-            { key: "tutoriasPendientes", label: t("reports.metrics.pending"), width: 30, align: "right" }
-        ],
-        report.tutores,
-        t("reports.noData")
-    );
+    if (!isExcuses) {
+        addSectionTitle(context, t("reports.tutorWorkload"));
+        addTable(
+            context,
+            [
+                { key: "nombreTutor", label: t("reports.pdf.tutor"), width: 62 },
+                { key: "totalGrupos", label: t("reports.metrics.groups"), width: 28, align: "right" },
+                { key: "totalAlumnos", label: t("reports.metrics.students"), width: 30, align: "right" },
+                { key: "totalTutorias", label: t("reports.metrics.sessions"), width: 32, align: "right" },
+                { key: "tutoriasPendientes", label: t("reports.metrics.pending"), width: 30, align: "right" }
+            ],
+            report.tutores,
+            t("reports.noData")
+        );
+        addHorizontalBarChart(
+            context,
+            t("reports.tutorWorkload"),
+            (report.tutores || []).map((tutor) => ({
+                label: tutor.nombreTutor,
+                value: tutor.tutoriasPendientes
+            })),
+            t("reports.noData")
+        );
+    }
 };
 
-const addTutorTables = (context, report, t) => {
+const addTutorTables = (context, report, module, t) => {
+    if (module === "justificantes") {
+        addSectionTitle(context, t("reports.excusesByStudent"));
+        addTable(
+            context,
+            [
+                { key: "matricula", label: t("reports.studentId"), width: 30 },
+                { key: "nombre", label: t("reports.pdf.name"), width: 58 },
+                { key: "total", label: t("reports.pdf.total"), width: 24, align: "right" },
+                { key: "pendientes", label: t("reports.metrics.pending"), width: 24, align: "right" },
+                { key: "aprobados", label: t("reports.pdf.approved"), width: 23, align: "right" },
+                { key: "rechazados", label: t("reports.pdf.rejected"), width: 23, align: "right" }
+            ],
+            report.justificantes,
+            t("reports.noData")
+        );
+        addHorizontalBarChart(
+            context,
+            t("reports.charts.studentExcuseCoverageTitle"),
+            (report.justificantes || []).map((student) => ({
+                label: student.nombre || student.matricula,
+                value: student.pendientes
+            })),
+            t("reports.noData")
+        );
+        return;
+    }
+
     addSectionTitle(context, t("reports.priorityStudents"));
     addTable(
         context,
         [
-            { key: "matricula", label: t("reports.studentId"), width: 29 },
-            { key: "nombre", label: t("reports.pdf.name"), width: 49 },
-            { key: "totalTutorias", label: t("reports.metrics.sessions"), width: 27, align: "right" },
-            { key: "tutoriasPendientes", label: t("reports.metrics.pending"), width: 26, align: "right" },
-            { key: "tutoriasCompletadas", label: t("reports.metrics.completed"), width: 27, align: "right" },
-            { key: "totalJustificantes", label: t("reports.metrics.excuses"), width: 24, align: "right" }
+            { key: "matricula", label: t("reports.studentId"), width: 34 },
+            { key: "nombre", label: t("reports.pdf.name"), width: 60 },
+            { key: "totalTutorias", label: t("reports.metrics.sessions"), width: 30, align: "right" },
+            { key: "tutoriasPendientes", label: t("reports.metrics.pending"), width: 29, align: "right" },
+            { key: "tutoriasCompletadas", label: t("reports.metrics.completed"), width: 29, align: "right" }
         ],
         report.alumnos,
         t("reports.noData")
     );
-
-    addSectionTitle(context, t("reports.excusesByStudent"));
-    addTable(
+    addHorizontalBarChart(
         context,
-        [
-            { key: "matricula", label: t("reports.studentId"), width: 30 },
-            { key: "nombre", label: t("reports.pdf.name"), width: 58 },
-            { key: "total", label: t("reports.pdf.total"), width: 24, align: "right" },
-            { key: "pendientes", label: t("reports.metrics.pending"), width: 24, align: "right" },
-            { key: "aprobados", label: t("reports.pdf.approved"), width: 23, align: "right" },
-            { key: "rechazados", label: t("reports.pdf.rejected"), width: 23, align: "right" }
-        ],
-        report.justificantes,
+        t("reports.charts.studentCoverageTitle"),
+        (report.alumnos || []).map((student) => ({
+            label: student.nombre || student.matricula,
+            value: student.tutoriasPendientes
+        })),
         t("reports.noData")
     );
 };
@@ -391,6 +514,8 @@ const addFooters = (context, t) => {
 export const buildReportPdf = ({
     user,
     report,
+    module = "tutorias",
+    recommendations,
     locale,
     t,
     translateText
@@ -402,7 +527,10 @@ export const buildReportPdf = ({
         putOnlyUsedFonts: true,
         compress: true
     });
-    const title = t(`reports.titles.${user.id_rol || "default"}`);
+    const moduleTitle = module === "justificantes"
+        ? t("reports.modules.excuses.title")
+        : t("reports.modules.tutoring.title");
+    const title = `${t(`reports.titles.${user.id_rol || "default"}`)} - ${moduleTitle}`;
     const context = { doc, title, y: 0 };
     const generatedAt = new Intl.DateTimeFormat(locale, {
         dateStyle: "medium",
@@ -417,19 +545,22 @@ export const buildReportPdf = ({
         generatedBy,
         t
     );
-    addOverview(context, user, report, t, translateText);
-    addTutoringStatus(context, report, t);
-    addExcuseStatus(context, report, t);
+    addOverview(context, user, report, locale, t, translateText);
+    if (module === "justificantes") addExcuseStatus(context, report, t);
+    else addTutoringStatus(context, report, t);
 
-    if (user.id_rol === 1) addAdminTables(context, report, t);
-    if (user.id_rol === 3) addTutorTables(context, report, t);
+    if (user.id_rol === 1) addAdminTables(context, report, module, t);
+    if (user.id_rol === 3) addTutorTables(context, report, module, t);
 
-    addRecommendations(context, report.recomendaciones, t, translateText);
+    addRecommendations(context, recommendations ?? report.recomendaciones, t, translateText);
     addFooters(context, t);
     return doc;
 };
 
 export const downloadReportPdf = (options) => {
     const doc = buildReportPdf(options);
-    doc.save(options.t("reports.fileName"));
+    const fileName = options.module === "justificantes"
+        ? options.t("reports.fileNames.excuses")
+        : options.t("reports.fileNames.tutoring");
+    doc.save(fileName);
 };

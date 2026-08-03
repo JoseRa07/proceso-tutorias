@@ -1,10 +1,17 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { API_URL } from "../api";
 import { useI18n } from "../i18n/I18nContext";
+import { readApiJson } from "../utils/apiErrors";
 
 export const useJustificante = (onSuccess) => {
     const { t } = useI18n();
     const [loading, setLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
+    const errorMessageRef = useRef("");
+    const updateErrorMessage = (message) => {
+        errorMessageRef.current = message;
+        setErrorMessage(message);
+    };
 
     const getAuthHeaders = (contentType = "application/json") => {
         const token = localStorage.getItem("token");
@@ -22,6 +29,7 @@ export const useJustificante = (onSuccess) => {
             if (!usuario?.id_usuario) throw new Error(t("excuses.invalidUser"));
 
             setLoading(true);
+            updateErrorMessage("");
 
             const urls = archivos?.length ? await subirArchivo(archivos) : [];
             const payload = { ...data, archivos: urls };
@@ -32,12 +40,12 @@ export const useJustificante = (onSuccess) => {
                 body: JSON.stringify(payload)
             });
 
-            if (!res.ok) throw new Error(t("excuses.sendErrorTitle"));
+            await readApiJson(res, t("excuses.sendErrorTitle"));
 
             onSuccess?.();
             return true;
         } catch (error) {
-            console.log(error);
+            updateErrorMessage(error?.message || t("excuses.sendErrorTitle"));
             return false;
         } finally {
             setLoading(false);
@@ -47,6 +55,7 @@ export const useJustificante = (onSuccess) => {
     const editar = async (id, data) => {
         try {
             setLoading(true);
+            updateErrorMessage("");
 
             const res = await fetch(`${API_URL}/Justificante/${id}`, {
                 method: "PUT",
@@ -54,12 +63,12 @@ export const useJustificante = (onSuccess) => {
                 body: JSON.stringify(data)
             });
 
-            if (!res.ok) throw new Error(t("excuses.updateErrorTitle"));
+            await readApiJson(res, t("excuses.updateErrorTitle"));
 
             onSuccess?.();
             return true;
         } catch (error) {
-            console.log(error);
+            updateErrorMessage(error?.message || t("excuses.updateErrorTitle"));
             return false;
         } finally {
             setLoading(false);
@@ -69,18 +78,19 @@ export const useJustificante = (onSuccess) => {
     const eliminar = async (id) => {
         try {
             setLoading(true);
+            updateErrorMessage("");
 
             const res = await fetch(`${API_URL}/Justificante/${id}`, {
                 method: "DELETE",
                 headers: getAuthHeaders(null)
             });
 
-            if (!res.ok) throw new Error(t("common.requestFailed"));
+            await readApiJson(res, t("common.requestFailed"));
 
             onSuccess?.();
             return true;
         } catch (error) {
-            console.log(error);
+            updateErrorMessage(error?.message || t("common.requestFailed"));
             return false;
         } finally {
             setLoading(false);
@@ -90,18 +100,19 @@ export const useJustificante = (onSuccess) => {
     const aceptar = async (id) => {
         try {
             setLoading(true);
+            updateErrorMessage("");
 
             const res = await fetch(`${API_URL}/Justificante/aceptar/${id}`, {
                 method: "PUT",
                 headers: getAuthHeaders(null)
             });
 
-            if (!res.ok) throw new Error(t("excuses.updateErrorTitle"));
+            await readApiJson(res, t("excuses.updateErrorTitle"));
 
             onSuccess?.();
             return true;
         } catch (error) {
-            console.log(error);
+            updateErrorMessage(error?.message || t("excuses.updateErrorTitle"));
             return false;
         } finally {
             setLoading(false);
@@ -120,10 +131,17 @@ export const useJustificante = (onSuccess) => {
             body: formData
         });
 
-        if (!res.ok) throw new Error(t("common.requestFailed"));
-
-        return await res.json();
+        return await readApiJson(res, t("common.requestFailed"));
     };
 
-    return { crear, editar, eliminar, aceptar, subirArchivo, loading };
+    return {
+        crear,
+        editar,
+        eliminar,
+        aceptar,
+        subirArchivo,
+        loading,
+        errorMessage,
+        getErrorMessage: () => errorMessageRef.current
+    };
 };

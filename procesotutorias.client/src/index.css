@@ -58,12 +58,61 @@ body {
   width: 1126px;
   max-width: 100%;
   margin: 0 auto;
-  text-align: center;
+  text-align: left;
   border-inline: 1px solid var(--border);
   min-height: 100svh;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+}
+
+.app-error-boundary {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: linear-gradient(180deg, #fff 55%, rgba(34, 212, 123, 0.16));
+}
+
+.app-error-boundary section {
+  width: min(560px, 100%);
+  padding: 28px;
+  border: 1px solid rgba(18, 25, 39, 0.08);
+  border-left: 8px solid #c94b45;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.app-error-boundary p {
+  margin: 0 0 8px;
+  color: #1b5e20;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.app-error-boundary h1 {
+  margin: 0 0 10px;
+  color: #121927;
+  font-size: clamp(22px, 4vw, 30px);
+}
+
+.app-error-boundary span {
+  display: block;
+  color: #596170;
+  line-height: 1.55;
+}
+
+.app-error-boundary button {
+  margin-top: 20px;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 7px;
+  color: #fff;
+  background: #20a85e;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 h1,

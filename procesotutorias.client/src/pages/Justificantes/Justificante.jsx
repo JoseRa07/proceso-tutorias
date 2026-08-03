@@ -40,7 +40,7 @@ function Justificante({ open, usuario, data, onClose, onSaved }) {
         mensaje: ""
     });
 
-    const { crear, aceptar, loading } = useJustificante(() => {
+    const { crear, aceptar, loading, getErrorMessage } = useJustificante(() => {
         onSaved?.();
     });
 
@@ -133,7 +133,7 @@ function Justificante({ open, usuario, data, onClose, onSaved }) {
             titulo: ok ? t("excuses.sentTitle") : t("excuses.sendErrorTitle"),
             mensaje: ok
                 ? t("excuses.sentMessage")
-                : t("common.tryAgain")
+                : getErrorMessage() || t("common.tryAgain")
         });
 
         if (ok) {
@@ -165,7 +165,7 @@ function Justificante({ open, usuario, data, onClose, onSaved }) {
             titulo: ok ? t("excuses.acceptedTitle") : t("excuses.updateErrorTitle"),
             mensaje: ok
                 ? t("excuses.acceptedMessage")
-                : t("common.tryAgain")
+                : getErrorMessage() || t("common.tryAgain")
         });
 
         if (ok) {

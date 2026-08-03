@@ -1,15 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { API_URL } from "../api";
 import { useI18n } from "../i18n/I18nContext";
-
-const getErrorMessage = async (response, fallback) => {
-    try {
-        const data = await response.json();
-        return data?.message || fallback;
-    } catch {
-        return fallback;
-    }
-};
+import { readApiJson } from "../utils/apiErrors";
 
 export const useSeguimientos = (usuario, estado = null) => {
     const { t } = useI18n();
@@ -28,16 +20,11 @@ export const useSeguimientos = (usuario, estado = null) => {
             }
         });
 
-        if (!response.ok) {
-            throw new Error(await getErrorMessage(response, t("followup.errors.request")));
-        }
-
-        if (response.status === 204) return null;
-        return response.json();
+        return readApiJson(response, t("followup.errors.request"));
     }, [t, token]);
 
     const cargarAlumnos = useCallback(async () => {
-        if (usuario?.id_rol !== 3) return;
+        if (![2, 3].includes(usuario?.id_rol)) return;
 
         try {
             setLoading(true);

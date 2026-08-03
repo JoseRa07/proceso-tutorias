@@ -314,6 +314,15 @@
     background: #fafafa;
 }
 
+.panel-data-error {
+    padding: 14px 16px;
+    border: 1px solid rgba(201, 75, 69, 0.22);
+    border-left: 6px solid #c94b45;
+    border-radius: 8px;
+    color: #7f302c;
+    background: #fbeceb;
+}
+
 @media (max-width: 900px) {
     .quick-actions {
         grid-template-columns: repeat(2, minmax(0, 1fr));

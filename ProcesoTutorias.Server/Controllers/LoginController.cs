@@ -64,8 +64,6 @@ namespace ProcesoTutorias.Server.Controllers
             SessionTokenResult session = await _sessionTokenService.CreateSessionAsync(usuario);
             WriteRefreshCookie(session.RefreshToken);
 
-            Console.WriteLine($"[LOGIN] {usuario.Correo} - {DateTime.Now}");
-
             return Ok(new
             {
                 token = session.AccessToken,

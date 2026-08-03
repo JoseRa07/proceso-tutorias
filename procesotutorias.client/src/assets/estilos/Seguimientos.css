@@ -59,14 +59,34 @@
     gap: 8px;
 }
 
-.seguimiento-filter-state-options .MuiButton-contained,
 .seguimiento-filter-apply {
     background: #20a85e !important;
 }
 
-.seguimiento-filter-state-options .MuiButton-contained:hover,
 .seguimiento-filter-apply:hover {
     background: #1b5e20 !important;
+}
+
+.seguimiento-filter-state-option {
+    padding: 6px 14px;
+    color: #121927;
+    background: #fff;
+    border: 1px solid #121927;
+    border-radius: 20px;
+    cursor: pointer;
+    font: inherit;
+}
+
+.seguimiento-filter-state-option:hover,
+.seguimiento-filter-state-option:focus-visible {
+    border-color: #20b96d;
+    outline: none;
+}
+
+.seguimiento-filter-state-option.active {
+    color: #fff;
+    background: #22d47b;
+    border-color: #20b96d;
 }
 
 .seguimiento-filter-apply {
@@ -82,6 +102,14 @@
     background:
         linear-gradient(135deg, rgba(32, 168, 94, 0.12), rgba(255, 255, 255, 0) 48%),
         #fff;
+    text-align: left;
+}
+
+.seguimientos-head > .MuiBox-root:first-child {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
 .seguimientos-eyebrow {
@@ -136,7 +164,7 @@
 
 .seguimiento-student-card {
     height: 100%;
-    aspect-ratio: 1 / 1;
+    min-height: 270px;
     border: 1px solid rgba(18, 25, 39, 0.08);
     border-radius: 16px !important;
     box-shadow: 0 5px 16px rgba(18, 25, 39, 0.08) !important;
@@ -156,12 +184,14 @@
 }
 
 .seguimiento-student-content {
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 12px;
     text-align: center;
+    overflow: visible;
     background:
         radial-gradient(circle at top, rgba(34, 212, 123, 0.11), transparent 46%),
         #fff;
@@ -375,9 +405,10 @@
 }
 
 .seguimiento-session-viewer {
-    min-height: 430px;
+    height: clamp(240px, calc(92vh - 245px), 620px);
     position: relative;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     border: 1px solid rgba(18, 25, 39, 0.08);
     border-radius: 14px;
     background: #fff;
@@ -478,7 +509,7 @@
     }
 
     .seguimiento-session-viewer {
-        min-height: 360px;
+        height: clamp(220px, calc(95vh - 260px), 520px);
     }
 }
 

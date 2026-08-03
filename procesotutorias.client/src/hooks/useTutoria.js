@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { API_URL } from "../api";
 import { useI18n } from "../i18n/I18nContext";
 import { sanitizeMultiline, sanitizeSingleLine } from "../utils/validation";
+import { readApiJson } from "../utils/apiErrors";
 
 const formInicial = {
     alumnoId: "",
@@ -49,7 +50,7 @@ export const useTutoria = (
 
             if (id) {
                 const res = await fetch(`${API_URL}/Tutoria/detalle?idSesion=${id}`, { headers: authHeaders });
-                const data = await res.json();
+                const data = await readApiJson(res, t("tutoring.loadError"));
 
                 setForm({
                     alumnoId: data.idAlumno,
@@ -68,7 +69,7 @@ export const useTutoria = (
                 });
 
                 const resGrupo = await fetch(`${API_URL}/Grupo/${data.idUsuarioAlumno}`, { headers: authHeaders });
-                setGrupo(await resGrupo.json());
+                setGrupo(await readApiJson(resGrupo, t("tutoring.loadError")));
                 setAlumnos([{ id_alumno: data.idAlumno, nombre: data.nombreAlumno }]);
                 return;
             }
@@ -82,20 +83,20 @@ export const useTutoria = (
                 seguimientoDescripcion: ""
             });
             const resGrupo = await fetch(`${API_URL}/Grupo/${usuario.id_usuario}`, { headers: authHeaders });
-            setGrupo(await resGrupo.json());
+            setGrupo(await readApiJson(resGrupo, t("tutoring.loadError")));
 
             if (usuario.id_rol !== 2) {
                 const resAlumnos = await fetch(`${API_URL}/Tutoria/alumnos?idUsuario=${usuario.id_usuario}`, { headers: authHeaders });
-                const lista = await resAlumnos.json();
+                const lista = await readApiJson(resAlumnos, t("tutoring.loadError"));
                 setAlumnos(lista || []);
             }
-        } catch {
+        } catch (error) {
             setPopup({
                 open: true,
                 loading: false,
                 type: "error",
                 titulo: t("common.error"),
-                mensaje: t("tutoring.loadError")
+                mensaje: error?.message || t("tutoring.loadError")
             });
         } finally {
             setLoading(false);
@@ -134,8 +135,7 @@ export const useTutoria = (
                     }
                 );
 
-                if (!response.ok) throw new Error();
-                const data = await response.json();
+                const data = await readApiJson(response, t("followup.errors.request"));
                 setSeguimientos(Array.isArray(data) ? data : []);
             } catch {
                 setSeguimientos([]);
@@ -145,7 +145,7 @@ export const useTutoria = (
         };
 
         cargarSeguimientos();
-    }, [form.alumnoId, id, token, usuario]);
+    }, [form.alumnoId, id, t, token, usuario]);
 
     const completarOperacion = (titulo, mensaje) => {
         setPopup({ open: true, loading: false, type: "success", titulo, mensaje });
@@ -173,8 +173,7 @@ export const useTutoria = (
             body: JSON.stringify(body)
         });
 
-        if (!response.ok) throw new Error();
-        return response.json();
+        return readApiJson(response, t("followup.form.saveError"));
     };
 
     const guardarTutoria = async () => {
@@ -198,8 +197,7 @@ export const useTutoria = (
                 })
             });
 
-            if (!res.ok) throw new Error();
-            const responseData = await res.json();
+            const responseData = await readApiJson(res, t("tutoring.saveError"));
 
             const sessionId = id || responseData.idSesion;
             if (usuario.id_rol === 3 && (id || form.seguimientoActivo)) {
@@ -225,8 +223,8 @@ export const useTutoria = (
             }
 
             completarOperacion(t("tutoring.savedTitle"), t("tutoring.savedMessage"));
-        } catch {
-            setPopup({ open: true, loading: false, type: "error", titulo: t("common.error"), mensaje: t("tutoring.saveError") });
+        } catch (error) {
+            setPopup({ open: true, loading: false, type: "error", titulo: t("common.error"), mensaje: error?.message || t("tutoring.saveError") });
         }
     };
 
@@ -247,13 +245,13 @@ export const useTutoria = (
                     ? t("followup.form.savedMessage")
                     : t("followup.form.removedMessage")
             );
-        } catch {
+        } catch (error) {
             setPopup({
                 open: true,
                 loading: false,
                 type: "error",
                 titulo: t("common.error"),
-                mensaje: t("followup.form.saveError")
+                mensaje: error?.message || t("followup.form.saveError")
             });
         }
     };
@@ -265,10 +263,10 @@ export const useTutoria = (
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            if (!res.ok) throw new Error();
+            await readApiJson(res, t("tutoring.deleteError"));
             completarOperacion(t("tutoring.deletedTitle"), t("tutoring.deletedMessage"));
-        } catch {
-            setPopup({ open: true, loading: false, type: "error", titulo: t("common.error"), mensaje: t("tutoring.deleteError") });
+        } catch (error) {
+            setPopup({ open: true, loading: false, type: "error", titulo: t("common.error"), mensaje: error?.message || t("tutoring.deleteError") });
         }
     };
 
@@ -279,10 +277,10 @@ export const useTutoria = (
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            if (!res.ok) throw new Error();
+            await readApiJson(res, t("tutoring.acceptError"));
             completarOperacion(t("tutoring.acceptedTitle"), t("tutoring.acceptedMessage"));
-        } catch {
-            setPopup({ open: true, loading: false, type: "error", titulo: t("common.error"), mensaje: t("tutoring.acceptError") });
+        } catch (error) {
+            setPopup({ open: true, loading: false, type: "error", titulo: t("common.error"), mensaje: error?.message || t("tutoring.acceptError") });
         }
     };
 
@@ -293,10 +291,10 @@ export const useTutoria = (
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            if (!res.ok) throw new Error();
+            await readApiJson(res, t("tutoring.editRequestError"));
             completarOperacion(t("tutoring.editRequestedTitle"), t("tutoring.editRequestedMessage"));
-        } catch {
-            setPopup({ open: true, loading: false, type: "error", titulo: t("common.error"), mensaje: t("tutoring.editRequestError") });
+        } catch (error) {
+            setPopup({ open: true, loading: false, type: "error", titulo: t("common.error"), mensaje: error?.message || t("tutoring.editRequestError") });
         }
     };
 

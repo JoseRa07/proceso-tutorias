@@ -33,6 +33,7 @@ import {
     validatePositiveInteger,
     validateFreeText
 } from "../../utils/validation";
+import { getAuthSession } from "../../auth/session";
 
 const inicial = {
     idUsuario: null,
@@ -47,7 +48,7 @@ const inicial = {
 function GestionUsuarios() {
     const { locale, t } = useI18n();
     const navigate = useNavigate();
-    const usuario = JSON.parse(localStorage.getItem("usuario"));
+    const usuario = getAuthSession()?.user;
     const { roles, usuarios, loading, error, cargarUsuarios, requestAdmin } = useAdminCatalogos();
     const [form, setForm] = useState(inicial);
     const [filtro, setFiltro] = useState("");
@@ -215,10 +216,12 @@ function GestionUsuarios() {
                                     <CardContent sx={{ padding: "10px !important" }}>
                                         <div className="admin-row">
                                             <Box>
-                                                <Typography fontWeight="bold">{item.nombre} {item.apellidos}</Typography>
+                                                <div className="admin-name-line">
+                                                    <Typography fontWeight="bold">{item.nombre} {item.apellidos}</Typography>
+                                                    <span className="admin-chip">{translateRole(t, item.rol)}</span>
+                                                </div>
                                                 <div className="admin-meta">
                                                     <span>{item.correo}</span>
-                                                    <span className="admin-chip">{translateRole(t, item.rol)}</span>
                                                     {item.reqCambioContra && <span className="admin-chip warning">{t("administration.users.pendingChange")}</span>}
                                                 </div>
                                             </Box>

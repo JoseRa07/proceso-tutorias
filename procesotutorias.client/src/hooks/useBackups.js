@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { API_URL } from "../api";
 import { useI18n } from "../i18n/I18nContext";
+import { readApiJson } from "../utils/apiErrors";
 
 export function useBackups() {
     const { locale, t } = useI18n();
@@ -29,15 +30,8 @@ export function useBackups() {
             }
         });
 
-        const data = await res.json().catch(() => null);
-
-        if (!res.ok) {
-            const serverMessage = data?.detail || data?.message;
-            throw new Error(locale === "es-MX" && serverMessage ? serverMessage : t("common.requestFailed"));
-        }
-
-        return data;
-    }, [getAuthHeaders, locale, t]);
+        return readApiJson(res, t("common.requestFailed"));
+    }, [getAuthHeaders, t]);
 
     const refresh = useCallback(async () => {
         const [filesData, jobsData] = await Promise.all([

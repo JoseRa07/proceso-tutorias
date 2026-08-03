@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ProcesoTutorias.Server.Models;
+using ProcesoTutorias.Server.Middleware;
 using ProcesoTutorias.Server.Services;
 using System;
 using System.IdentityModel.Tokens.Jwt;
@@ -24,6 +26,19 @@ if (!string.IsNullOrWhiteSpace(railwayPort))
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add(new AuthorizeFilter());
+});
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        context.HttpContext.Response.Headers.CacheControl = "no-store";
+        return new BadRequestObjectResult(new
+        {
+            code = "SOLICITUD_INVALIDA",
+            message = "La solicitud contiene datos inválidos. Revisa los campos e inténtalo nuevamente.",
+            traceId = context.HttpContext.TraceIdentifier
+        });
+    };
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -97,6 +112,37 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 {
                     context.Fail("La sesión fue revocada.");
                 }
+            },
+            OnChallenge = async context =>
+            {
+                if (context.Response.HasStarted)
+                    return;
+
+                context.HandleResponse();
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json; charset=utf-8";
+                context.Response.Headers.CacheControl = "no-store";
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    code = "SESION_NO_VALIDA",
+                    message = "La sesión no es válida o ha expirado. Inicia sesión nuevamente.",
+                    traceId = context.HttpContext.TraceIdentifier
+                });
+            },
+            OnForbidden = async context =>
+            {
+                if (context.Response.HasStarted)
+                    return;
+
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                context.Response.ContentType = "application/json; charset=utf-8";
+                context.Response.Headers.CacheControl = "no-store";
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    code = "ACCESO_DENEGADO",
+                    message = "No tienes permiso para realizar esta operación.",
+                    traceId = context.HttpContext.TraceIdentifier
+                });
             }
         };
     });
@@ -107,6 +153,7 @@ var app = builder.Build();
 
 await DatabaseSchemaInitializer.ApplyAsync(app.Services);
 
+app.UseMiddleware<ApiExceptionMiddleware>();
 app.UseCors("AllowReact");
 app.UseDefaultFiles();
 app.UseStaticFiles();

@@ -18,11 +18,22 @@ namespace ProcesoTutorias.Server.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Maestro>>> GetMaestros()
+        public async Task<ActionResult> GetMaestros()
         {
-            return await _context.Maestros
-                .Include(m => m.IdUsuarioNavigation)
+            var maestros = await _context.Maestros
+                .AsNoTracking()
+                .Select(m => new
+                {
+                    idMaestro = m.IdMaestro,
+                    idUsuario = m.IdUsuario,
+                    codEmpleado = m.CodEmpleado,
+                    vigencia = m.Vigencia,
+                    nombre = m.IdUsuarioNavigation.Nombre + " " + m.IdUsuarioNavigation.Apellidos,
+                    correo = m.IdUsuarioNavigation.Correo
+                })
                 .ToListAsync();
+
+            return Ok(maestros);
         }
 
         [HttpPost]
@@ -34,22 +45,28 @@ namespace ProcesoTutorias.Server.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            try
-            {
-                _context.Maestros.Add(maestro);
-                await _context.SaveChangesAsync();
+            bool usuarioExiste = await _context.Usuarios
+                .AsNoTracking()
+                .AnyAsync(usuario => usuario.IdUsuario == maestro.IdUsuario);
+            if (!usuarioExiste)
+                return BadRequest(new { message = "[MAESTRO_USUARIO_INVALIDO] El usuario seleccionado no existe." });
 
-                return CreatedAtAction(nameof(GetMaestros),
-                    new { id = maestro.IdMaestro }, maestro);
-            }
-            catch (Exception ex)
+            bool maestroExiste = await _context.Maestros
+                .AsNoTracking()
+                .AnyAsync(item =>
+                    item.IdUsuario == maestro.IdUsuario ||
+                    item.CodEmpleado == maestro.CodEmpleado);
+            if (maestroExiste)
+                return Conflict(new { message = "[MAESTRO_DUPLICADO] El usuario o código de empleado ya está registrado." });
+
+            _context.Maestros.Add(maestro);
+            await _context.SaveChangesAsync();
+
+            return StatusCode(StatusCodes.Status201Created, new
             {
-                return StatusCode(500, new
-                {
-                    message = "Error al guardar en BD",
-                    detalle = ex.InnerException?.Message ?? ex.Message
-                });
-            }
+                message = "Maestro registrado correctamente.",
+                idMaestro = maestro.IdMaestro
+            });
         }
     }
 }

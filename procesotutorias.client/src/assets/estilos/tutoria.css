@@ -51,6 +51,29 @@
     table-layout: fixed;
 }
 
+.tutoria-pdf-document {
+    width: 100%;
+    padding: 1px;
+    box-sizing: border-box;
+    background: #fff;
+}
+
+.tutoria-student-select {
+    width: 100%;
+    min-width: 0;
+    padding: 8px 10px;
+    box-sizing: border-box;
+    color: #121927;
+    background: #fff;
+    border: 1px solid #667085;
+    border-radius: 4px;
+}
+
+.tutoria-student-select:disabled {
+    color: #4b5563;
+    background: #f3f4f6;
+}
+
 .tutoria-cont th,
 .tutoria-cont td {
     border: 1px solid #000;

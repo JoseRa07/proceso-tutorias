@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { useTutoria } from "../../hooks/useTutoria";
@@ -28,6 +28,7 @@ import Alerta from "../../componentes/Alerta";
 import Aceptar from "@mui/icons-material/DownloadDoneRounded";
 import Edicion from "@mui/icons-material/PreviewRounded";
 import TrackChangesRoundedIcon from "@mui/icons-material/TrackChangesRounded";
+import PictureAsPdfRoundedIcon from "@mui/icons-material/PictureAsPdfRounded";
 import { useI18n } from "../../i18n/I18nContext";
 import {
     validateDate,
@@ -35,6 +36,7 @@ import {
     validatePositiveInteger,
     validateTimeRange
 } from "../../utils/validation";
+import { downloadTutoringPdf } from "../../utils/tutoringPdf";
 
 const MOTIVO_VALUES = [
     "REPROBACION",
@@ -76,6 +78,8 @@ function Tutoria({
         mensaje: ""
     });
     const [fieldErrors, setFieldErrors] = useState({});
+    const [exportingPdf, setExportingPdf] = useState(false);
+    const pdfDocumentRef = useRef(null);
 
     const [usuario] = useState(() => {
         const u = localStorage.getItem("usuario");
@@ -214,6 +218,25 @@ function Tutoria({
 
     const editable = !id || form?.estado?.toUpperCase() === "EDICION";
 
+    const descargarPdf = async () => {
+        if (!id || !pdfDocumentRef.current || exportingPdf) return;
+
+        try {
+            setExportingPdf(true);
+            await downloadTutoringPdf(pdfDocumentRef.current, `tutoria-${id}.pdf`);
+        } catch {
+            setPopup({
+                open: true,
+                loading: false,
+                type: "error",
+                titulo: t("tutoring.pdfErrorTitle"),
+                mensaje: t("tutoring.pdfErrorMessage")
+            });
+        } finally {
+            setExportingPdf(false);
+        }
+    };
+
     const contenido = (
         <div className={modal ? "tutoria-cont tutoria-cont-modal" : "tutoria-cont"}>
             <div className="tutoria-titlebar">
@@ -236,6 +259,7 @@ function Tutoria({
                     </Box>
                 ) : (
                     <form onSubmit={validarYGuardar}>
+                        <div className="tutoria-pdf-document" ref={pdfDocumentRef}>
                         <table>
                             <tbody>
                                 <tr>
@@ -256,10 +280,10 @@ function Tutoria({
                                 <tr>
                                     <td colSpan="8">
                                         <select
+                                            className={`tutoria-student-select ${fieldErrors.alumnoId ? "input-error" : ""}`}
                                             value={form.alumnoId}
                                             disabled={!!id}
                                             aria-invalid={!!fieldErrors.alumnoId}
-                                            className={fieldErrors.alumnoId ? "input-error" : ""}
                                             onChange={(e) => setForm({
                                                 ...form,
                                                 alumnoId: e.target.value,
@@ -469,6 +493,7 @@ function Tutoria({
                                 </tr>
                             </tbody>
                         </table>
+                        </div>
 
                         {usuario.id_rol === 3 && showFollowupControls && (
                             <Box className="tutoria-followup">
@@ -626,30 +651,43 @@ function Tutoria({
                             </Box>
                         )}
 
-                        {showActions && (
+                        {(showActions || id) && (
                         <div className="acciones">
-                            {usuario.id_rol === 3 && (!id || editable) && (
+                            {id && (
+                                <Box
+                                    className="accion-item"
+                                    onClick={descargarPdf}
+                                    aria-disabled={exportingPdf}
+                                >
+                                    {exportingPdf ? <CircularProgress size={22} /> : <PictureAsPdfRoundedIcon />}
+                                    <Typography>
+                                        {exportingPdf ? t("tutoring.preparingPdf") : t("tutoring.downloadPdf")}
+                                    </Typography>
+                                </Box>
+                            )}
+
+                            {showActions && usuario.id_rol === 3 && (!id || editable) && (
                                 <Box className="accion-item" onClick={validarYGuardar}>
                                     <Aceptar />
                                     <Typography>{t("tutoring.apply")}</Typography>
                                 </Box>
                             )}
 
-                            {id && usuario.id_rol === 2 && (
+                            {showActions && id && usuario.id_rol === 2 && (
                                 <Box className="accion-item" onClick={aceptarTutoria}>
                                     <Aceptar />
                                     <Typography>{t("tutoring.accept")}</Typography>
                                 </Box>
                             )}
 
-                            {id && (
+                            {showActions && id && (
                                 <Box className="accion-item" onClick={solicitarEdicion}>
                                     <Edicion />
                                     <Typography>{t("tutoring.requestEdit")}</Typography>
                                 </Box>
                             )}
 
-                            {id && usuario.id_rol !== 2 && (
+                            {showActions && id && usuario.id_rol !== 2 && (
                                 <Box className="accion-item" onClick={eliminarTutoria}>
                                     <Delete />
                                     <Typography>{t("tutoring.remove")}</Typography>
