@@ -12,6 +12,9 @@ dist/
 # Logs
 *.log
 
+# Local uploaded files
+ProcesoTutorias.Server/storage/
+
 # Visual Studio
 .vs/
 

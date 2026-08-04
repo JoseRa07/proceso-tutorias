@@ -24,6 +24,10 @@ import {
     validateFreeText
 } from "../../utils/validation";
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_FILE_COUNT = 10;
+const ALLOWED_FILE_PATTERN = /\.(jpe?g|png|webp|pdf)$/i;
+
 function Justificante({ open, usuario, data, onClose, onSaved }) {
     const { t } = useI18n();
     const [form, setForm] = useState({
@@ -52,8 +56,12 @@ function Justificante({ open, usuario, data, onClose, onSaved }) {
         if (nuevaVentana) nuevaVentana.opener = null;
 
         try {
+            const token = localStorage.getItem("token");
             const response = await fetch(
-                `${API_URL}/Justificante/archivo/${encodeURIComponent(nombre)}`
+                `${API_URL}/Justificante/archivo/${encodeURIComponent(nombre)}`,
+                {
+                    headers: token ? { Authorization: `Bearer ${token}` } : {}
+                }
             );
             if (response.status === 404) {
                 nuevaVentana?.close();
@@ -91,6 +99,51 @@ function Justificante({ open, usuario, data, onClose, onSaved }) {
         }
     };
 
+    const validarArchivos = (files) => {
+        if (files.length > MAX_FILE_COUNT) {
+            return {
+                titulo: t("excuses.filesLimitTitle"),
+                mensaje: t("excuses.filesLimitMessage")
+            };
+        }
+
+        if (files.some((file) => file.size <= 0 || file.size > MAX_FILE_SIZE)) {
+            return {
+                titulo: t("excuses.fileSizeTitle"),
+                mensaje: t("excuses.fileSizeMessage")
+            };
+        }
+
+        if (files.some((file) => !ALLOWED_FILE_PATTERN.test(file.name))) {
+            return {
+                titulo: t("excuses.fileTypeTitle"),
+                mensaje: t("excuses.fileTypeMessage")
+            };
+        }
+
+        return null;
+    };
+
+    const handleFilesChange = (event) => {
+        const files = Array.from(event.target.files || []);
+        const error = validarArchivos(files);
+
+        if (error) {
+            event.target.value = "";
+            setForm((prev) => ({ ...prev, archivos: [] }));
+            setPopup({
+                open: true,
+                loading: false,
+                type: "error",
+                titulo: error.titulo,
+                mensaje: error.mensaje
+            });
+            return;
+        }
+
+        setForm((prev) => ({ ...prev, archivos: files }));
+    };
+
     const validar = () => {
         const nuevosErrores = {
             descripcion: validateFreeText(form.descripcion, t, { maxLength: 1000 }),
@@ -108,6 +161,18 @@ function Justificante({ open, usuario, data, onClose, onSaved }) {
         event.preventDefault();
 
         if (!validar()) return;
+
+        const errorArchivos = validarArchivos(form.archivos);
+        if (errorArchivos) {
+            setPopup({
+                open: true,
+                loading: false,
+                type: "error",
+                titulo: errorArchivos.titulo,
+                mensaje: errorArchivos.mensaje
+            });
+            return;
+        }
 
         setPopup({
             open: true,
@@ -268,10 +333,7 @@ function Justificante({ open, usuario, data, onClose, onSaved }) {
                                         type="file"
                                         multiple
                                         accept=".jpg,.jpeg,.png,.webp,.pdf"
-                                        onChange={(e) => setForm((prev) => ({
-                                            ...prev,
-                                            archivos: Array.from(e.target.files || [])
-                                        }))}
+                                        onChange={handleFilesChange}
                                     />
                                 </Button>
 

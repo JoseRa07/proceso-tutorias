@@ -16,15 +16,29 @@ namespace ProcesoTutorias.Server.Controllers
     [Authorize(Roles = "ALUMNO,TUTOR")]
     public class JustificanteController : ControllerBase
     {
+        private const long MaxFileSize = 5 * 1024 * 1024;
+        private const int MaxFileCount = 10;
+        private static readonly HashSet<string> AllowedExtensions =
+            new(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".webp", ".pdf" };
+
         private readonly SistemaTutoriasContext _context;
         private readonly AuditLogService _auditLogService;
+        private readonly string _justificantesDirectory;
 
         public JustificanteController(
             SistemaTutoriasContext context,
-            AuditLogService auditLogService)
+            AuditLogService auditLogService,
+            IWebHostEnvironment environment)
         {
             _context = context;
             _auditLogService = auditLogService;
+
+            string? railwayVolumePath = Environment.GetEnvironmentVariable("RAILWAY_VOLUME_MOUNT_PATH");
+            string storageRoot = string.IsNullOrWhiteSpace(railwayVolumePath)
+                ? Path.Combine(environment.ContentRootPath, "storage")
+                : railwayVolumePath;
+
+            _justificantesDirectory = Path.Combine(storageRoot, "justificantes");
         }
 
         // =========================
@@ -276,35 +290,29 @@ namespace ProcesoTutorias.Server.Controllers
         // =========================
         [HttpPost("upload")]
         [Authorize(Roles = "ALUMNO")]
-        [RequestSizeLimit(50 * 1024 * 1024)]
+        [RequestSizeLimit(55 * 1024 * 1024)]
         public IActionResult SubirArchivos([FromForm] List<IFormFile> files)
         {
             if (files == null || files.Count == 0)
-                return BadRequest("No se enviaron archivos");
-            if (files.Count > 10)
+                return BadRequest(new { message = "[ARCHIVOS_REQUERIDOS] Selecciona al menos un archivo." });
+            if (files.Count > MaxFileCount)
                 return BadRequest(new { message = "[ARCHIVOS_LIMITE] Se permiten como máximo 10 archivos." });
 
-            string carpeta = @"C:\justificantes\";
+            if (files.Any(file => file.Length <= 0 || file.Length > MaxFileSize))
+                return BadRequest(new { message = "[ARCHIVO_TAMANO_INVALIDO] Cada archivo debe pesar entre 1 byte y 5 MB." });
 
-            if (!Directory.Exists(carpeta))
-                Directory.CreateDirectory(carpeta);
+            if (files.Any(file => !AllowedExtensions.Contains(Path.GetExtension(file.FileName))))
+                return BadRequest(new { message = "[ARCHIVO_TIPO_INVALIDO] Solo se permiten archivos JPG, JPEG, PNG, WEBP o PDF." });
+
+            Directory.CreateDirectory(_justificantesDirectory);
 
             var urls = new List<string>();
 
             foreach (var file in files)
             {
-                if (file.Length <= 0 || file.Length > 10 * 1024 * 1024)
-                    return BadRequest(new { message = "[ARCHIVO_TAMANO_INVALIDO] Cada archivo debe pesar entre 1 byte y 10 MB." });
-
-                var ext = Path.GetExtension(file.FileName).ToLower();
-
-                var validos = new[] { ".jpg", ".jpeg", ".png", ".webp", ".pdf" };
-
-                if (!validos.Contains(ext))
-                    return BadRequest("Tipo no permitido");
-
-                var nombre = $"{Guid.NewGuid()}{ext}";
-                var ruta = Path.Combine(carpeta, nombre);
+                string extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                string nombre = $"{Guid.NewGuid()}{extension}";
+                string ruta = Path.Combine(_justificantesDirectory, nombre);
 
                 using var stream = new FileStream(ruta, FileMode.Create);
                 file.CopyTo(stream);
@@ -351,7 +359,7 @@ namespace ProcesoTutorias.Server.Controllers
             if (!autorizado)
                 return Forbid();
 
-            string fullPath = Path.Combine(@"C:\justificantes", nombre);
+            string fullPath = Path.Combine(_justificantesDirectory, nombre);
             if (!System.IO.File.Exists(fullPath))
                 return NotFound();
 
